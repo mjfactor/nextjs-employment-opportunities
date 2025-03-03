@@ -23,7 +23,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
             <div className="text-center text-sm">
               Already have an account?{" "}
               <Button variant="link" className="p-0 h-auto font-normal" asChild>
-                <Link href="/login">Sign in</Link>
+                <Link href="/">Sign in</Link>
               </Button>
             </div>
           </div>
