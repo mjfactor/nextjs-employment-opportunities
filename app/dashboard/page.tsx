@@ -1,4 +1,5 @@
-import { AppSidebar } from "../../components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
+import { redirect } from "next/navigation"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,8 +10,12 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-
-export default function Page() {
+import { auth } from "@/auth"
+export default async function Page() {
+  const session = await auth()
+  if (!session) {
+    redirect("/signin")
+  }
   return (
     <SidebarProvider>
       <AppSidebar />
