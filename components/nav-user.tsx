@@ -12,8 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, useSidebar } from "@/components/ui/sidebar"
-import { ThemeToggle } from "./theme-toggle"
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
 
 export function NavUser({
   user,
@@ -28,10 +27,6 @@ export function NavUser({
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem>
-        <ThemeToggle />
-      </SidebarMenuItem>
-      <SidebarSeparator />
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
