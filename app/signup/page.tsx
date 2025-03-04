@@ -1,4 +1,4 @@
-import { SignupForm } from "@/components/auth/signup-form"
+import { SignupForm } from "@/components/client/user-login-signup/signup-form"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 export default async function SignupPage() {

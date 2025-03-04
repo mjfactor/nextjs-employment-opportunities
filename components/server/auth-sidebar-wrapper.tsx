@@ -1,5 +1,5 @@
 import { auth } from "@/auth"
-import { AppSidebar } from "@/components/sidebar/app-sidebar"
+import { AppSidebar } from "@/components/client/sidebar/app-sidebar"
 import type * as React from "react"
 
 export default async function AuthSidebarWrapper(props: React.ComponentPropsWithoutRef<typeof AppSidebar>) {
