@@ -132,7 +132,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col gap-6">
             {errors.form && (
-              <div className="text-sm font-medium text-destructive">{errors.form}</div>
+              <div className="text-sm font-medium text-red-500 font-bold">{errors.form}</div>
             )}
             <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>
@@ -145,7 +145,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
                 required
               />
               {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
+                <p className="text-sm text-red-500 font-bold">{errors.name}</p>
               )}
             </div>
             <div className="grid gap-2">
@@ -160,7 +160,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
                 required
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
+                <p className="text-sm text-red-500 font-bold">{errors.email}</p>
               )}
             </div>
             <div className="grid gap-2">
@@ -174,7 +174,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
                 required
               />
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
+                <p className="text-sm text-red-500 font-bold">{errors.password}</p>
               )}
             </div>
             <div className="grid gap-2">
@@ -188,7 +188,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
                 required
               />
               {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                <p className="text-sm text-red-500 font-bold">{errors.confirmPassword}</p>
               )}
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
