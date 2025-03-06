@@ -8,4 +8,9 @@ export const signInSchema = object({
         .min(1, "Password is required")
         .min(8, "Password must be more than 8 characters")
         .max(32, "Password must be less than 32 characters"),
+    confirmPassword: string({ required_error: "Confirm Password is required" })
+        .min(1, "Confirm Password is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
 })
