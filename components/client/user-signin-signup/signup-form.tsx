@@ -132,7 +132,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col gap-6">
             {errors.form && (
-              <div className="text-sm font-medium text-red-500 font-bold">{errors.form}</div>
+              <div className="text-sm font-medium text-red-500">{errors.form}</div>
             )}
             <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>
