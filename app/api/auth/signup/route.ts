@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/prisma/prisma" // Adjust this import based on your Prisma client location
-import { saltAndHashPassword } from "@/lib/auth/hashPassword"
+import bcrypt from 'bcrypt';
 
+async function saltAndHashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
+}
 // Validation schema for signup (matching frontend schema)
 const signupSchema = z.object({
     name: z.string()
