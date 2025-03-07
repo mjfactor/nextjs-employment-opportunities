@@ -32,6 +32,9 @@ export default async function Page() {
                   <BreadcrumbLink href="/dashboard">Employment Opportunities</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/dasboard/career-compass">Aggregator</BreadcrumbLink>
+                </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>

@@ -32,18 +32,27 @@ export function AppSidebar({
       // ...existing navMain items
       {
         title: "Employment Opportunities",
-        url: "#",
+        url: "/dashboard",
         icon: BriefcaseBusiness,
         isActive: true,
+
         items: [
           {
-            title: "Settings",
-            url: "#",
+            title: "Career Compass",
+            url: "/dashboard/career-compass",
+          },
+          {
+            title: "ATS",
+            url: "/dashboard/ats",
+          },
+          {
+            title: "Aggregator",
+            url: "/dashboard/aggregator",
           },
         ],
       },
       {
-        title: "Documentation",
+        title: "About",
         url: "#",
         icon: BookOpen,
         items: [
