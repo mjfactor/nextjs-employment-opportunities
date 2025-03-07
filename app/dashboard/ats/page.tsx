@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import AuthSidebarWrapper from "@/components/server/auth-sidebar-wrapper"
+import AuthSidebarWrapper from "@/components/client/sidebar/auth-sidebar-wrapper"
 import {
   Breadcrumb,
   BreadcrumbItem,
