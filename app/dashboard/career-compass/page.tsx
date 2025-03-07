@@ -39,7 +39,6 @@ export default async function Page() {
             </Breadcrumb>
           </div>
         </header>
-
       </SidebarInset>
     </SidebarProvider>
   )
