@@ -75,12 +75,14 @@ export function ManualResumeForm({ onSubmit }: ManualResumeFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 p-6">
-            <div className="space-y-4">
-                <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-8 p-6">
+            <div className="space-y-6">
+                <div className="space-y-3">
                     <div className="flex items-center">
                         <GraduationCap className="mr-2 h-5 w-5 text-primary" />
-                        <Label htmlFor="education">Education/Course</Label>
+                        <Label htmlFor="education" className="text-base font-medium">
+                            Education/Course
+                        </Label>
                     </div>
                     <Textarea
                         id="education"
@@ -88,14 +90,16 @@ export function ManualResumeForm({ onSubmit }: ManualResumeFormProps) {
                         value={education}
                         onChange={(e) => setEducation(e.target.value)}
                         required
-                        className="min-h-[100px]"
+                        className="min-h-[100px] resize-y"
                     />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <div className="flex items-center">
                         <Code className="mr-2 h-5 w-5 text-primary" />
-                        <Label htmlFor="skills">Skills</Label>
+                        <Label htmlFor="skills" className="text-base font-medium">
+                            Skills
+                        </Label>
                     </div>
                     <Textarea
                         id="skills"
@@ -103,26 +107,26 @@ export function ManualResumeForm({ onSubmit }: ManualResumeFormProps) {
                         value={skills}
                         onChange={(e) => setSkills(e.target.value)}
                         required
-                        className="min-h-[100px]"
+                        className="min-h-[100px] resize-y"
                     />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
                             <Briefcase className="mr-2 h-5 w-5 text-primary" />
-                            <Label>Job Experience</Label>
+                            <Label className="text-base font-medium">Job Experience</Label>
                         </div>
-                        <Button type="button" variant="outline" size="sm" onClick={addJobExperience}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
+                        <Button type="button" variant="outline" onClick={addJobExperience} className="gap-1">
+                            <PlusCircle className="h-4 w-4" />
                             Add Experience
                         </Button>
                     </div>
 
                     {jobExperiences.map((job, index) => (
-                        <Card key={job.id} className="border border-muted">
-                            <CardContent className="pt-6 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card key={job.id} className="border border-muted shadow-sm">
+                            <CardContent className="pt-6 pb-4 space-y-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="space-y-2">
                                         <Label htmlFor={`company-${job.id}`}>Company</Label>
                                         <Input
@@ -145,7 +149,7 @@ export function ManualResumeForm({ onSubmit }: ManualResumeFormProps) {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="space-y-2">
                                         <Label htmlFor={`start-date-${job.id}`}>Start Date</Label>
                                         <Input
@@ -176,13 +180,13 @@ export function ManualResumeForm({ onSubmit }: ManualResumeFormProps) {
                                         value={job.description}
                                         onChange={(e) => updateJobExperience(job.id, "description", e.target.value)}
                                         required={index === 0}
-                                        className="min-h-[100px]"
+                                        className="min-h-[120px] resize-y"
                                     />
                                 </div>
                             </CardContent>
 
                             {index > 0 && (
-                                <CardFooter className="flex justify-end py-3">
+                                <CardFooter className="flex justify-end py-3 bg-muted/10">
                                     <Button type="button" variant="destructive" size="sm" onClick={() => removeJobExperience(job.id)}>
                                         <MinusCircle className="mr-2 h-4 w-4" />
                                         Remove

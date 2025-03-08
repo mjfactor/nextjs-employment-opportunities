@@ -166,10 +166,14 @@ export function ResumeUploader({ onFileSelect, onSubmit, className }: ResumeUplo
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         className={cn(
-          "relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors",
-          status === "error" ? "border-destructive bg-destructive/10" : "border-muted-foreground/25 hover:bg-accent",
+          "relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer",
+          status === "error"
+            ? "border-destructive bg-destructive/10"
+            : "border-primary/20 hover:border-primary/50 hover:bg-accent/50",
           status === "success" ? "border-green-500/50 bg-green-500/10" : "",
+          "min-h-[200px]", // Ensure minimum height for better visibility
         )}
+        onClick={() => fileInputRef.current?.click()}
       >
         <input
           ref={fileInputRef}
@@ -178,52 +182,53 @@ export function ResumeUploader({ onFileSelect, onSubmit, className }: ResumeUplo
           onChange={handleFileChange}
           className="absolute inset-0 cursor-pointer opacity-0"
           disabled={status === "loading"}
+          aria-label="Upload resume file"
         />
 
-        <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-center max-w-md mx-auto">
+          <div className="flex items-center justify-center p-3 bg-muted/50 rounded-full">
             {getFileIcon()}
             {status !== "idle" && <div className="ml-2">{getStatusIcon()}</div>}
           </div>
 
           {file ? (
             <div className="mt-2 flex flex-col items-center">
-              <p className="font-medium text-sm">{file.name}</p>
-              <p className="text-xs text-muted-foreground">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+              <p className="font-medium">{file.name}</p>
+              <p className="text-sm text-muted-foreground mt-1">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
             </div>
           ) : (
-            <div className="mt-2 space-y-1">
-              <p className="font-medium">Drag and drop your resume or click to browse</p>
-              <p className="text-xs text-muted-foreground">Accepts PDF, DOCX, JPEG, PNG, GIF (Max 10MB)</p>
+            <div className="mt-2 space-y-2">
+              <p className="font-medium text-base">Drag and drop your resume or click here to browse</p>
+              <p className="text-sm text-muted-foreground">Accepts PDF, DOCX, JPEG, PNG, GIF (Max 10MB)</p>
             </div>
           )}
 
           {status === "loading" && (
-            <div className="mt-4 w-full max-w-xs">
+            <div className="mt-6 w-full max-w-xs">
               <Progress value={progress} className="h-2" />
-              <p className="mt-1 text-xs text-center text-muted-foreground">Uploading... {progress}%</p>
+              <p className="mt-2 text-sm text-center text-muted-foreground">Uploading... {progress}%</p>
             </div>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="mt-3 text-sm text-destructive flex items-center gap-1.5">
-          <AlertCircle className="h-4 w-4" />
+        <div className="mt-4 text-sm text-destructive flex items-center gap-1.5 p-3 bg-destructive/10 rounded-md">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="mt-6 flex justify-end gap-2">
         {(status === "success" || status === "error") && (
-          <Button variant="outline" size="sm" onClick={handleReset}>
+          <Button variant="outline" onClick={handleReset}>
             <X className="mr-2 h-4 w-4" />
             Clear
           </Button>
         )}
 
         {status === "success" && file && (
-          <Button variant="default" size="sm" className="ml-2 bg-primary" onClick={() => onSubmit && onSubmit(file)}>
+          <Button variant="default" className="bg-primary" onClick={() => onSubmit && onSubmit(file)}>
             <Check className="mr-2 h-4 w-4" />
             Submit Resume
           </Button>
