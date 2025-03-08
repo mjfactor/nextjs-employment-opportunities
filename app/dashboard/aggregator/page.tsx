@@ -1,17 +1,20 @@
 import { redirect } from "next/navigation"
-import AuthSidebarWrapper from "@/components/client/sidebar/auth-sidebar-wrapper"
+import AuthSidebarWrapper from "@/components/sidebar/auth-sidebar-wrapper"
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/auth"
-import { ModeToggle } from "@/components/client/dark-light-toggle/theme-toggle"
+import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
+
+import { JobResourcesUI } from "@/components/aggregator/job-resources-ui"
+import jobResources from "@/components/aggregator/job-resources.json"
+
 export default async function Page() {
   const session = await auth()
   if (!session) {
@@ -33,13 +36,16 @@ export default async function Page() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dasboard/career-compass">Aggregator</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard/aggregator">Aggregator</BreadcrumbLink>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
 
+        <main className="min-h-screen bg-background p-4">
+          <JobResourcesUI resources={jobResources} />
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )

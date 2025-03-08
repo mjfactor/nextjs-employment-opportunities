@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import AuthSidebarWrapper from "@/components/client/sidebar/auth-sidebar-wrapper"
+import AuthSidebarWrapper from "@/components/sidebar/auth-sidebar-wrapper"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,8 +11,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/auth"
-import { ModeToggle } from "@/components/client/dark-light-toggle/theme-toggle"
-import { ResumeSubmissionFormWrapper } from "@/components/client/career-compass/resume-submission-form-wrapper"
+import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
+import { ResumeSubmissionForm } from "@/components/career-compass/resume-submission-form"
 
 export default async function Page() {
   const session = await auth()
@@ -49,7 +49,7 @@ export default async function Page() {
             Upload your resume or manually enter your details to get personalized career recommendations.
           </p>
 
-          <ResumeSubmissionFormWrapper />
+          <ResumeSubmissionForm />
         </main>
       </SidebarInset>
     </SidebarProvider>

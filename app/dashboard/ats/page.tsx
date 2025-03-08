@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import AuthSidebarWrapper from "@/components/client/sidebar/auth-sidebar-wrapper"
+import AuthSidebarWrapper from "@/components/sidebar/auth-sidebar-wrapper"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,7 +11,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/auth"
-import { ModeToggle } from "@/components/client/dark-light-toggle/theme-toggle"
+import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
 export default async function Page() {
   const session = await auth()
   if (!session) {
