@@ -14,12 +14,12 @@ interface CategorySectionProps {
 
 export function CategorySection({ category, resources }: CategorySectionProps) {
   return (
-    <Card className="overflow-hidden border-none shadow-md transition-all duration-200 hover:shadow-lg">
+    <Card className="overflow-hidden border-none shadow-md transition-all duration-200 hover:shadow-lg w-full">
       <CardHeader className="bg-muted/10 pb-3">
-        <CardTitle className="text-lg md:text-xl font-semibold">{category}</CardTitle>
+        <CardTitle className="text-lg md:text-xl font-semibold break-words">{category}</CardTitle>
       </CardHeader>
-      <CardContent className="p-2 sm:p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+      <CardContent className="p-2 sm:p-4 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 w-full">
           {resources.map((resource) => (
             <ResourceCard
               key={resource.name}
