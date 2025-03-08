@@ -1,0 +1,38 @@
+import { ResourceCard } from "@/components/aggregator/resource-card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+type Resource = {
+  name: string
+  url: string
+  description: string
+}
+
+interface CategorySectionProps {
+  category: string
+  resources: Resource[]
+}
+
+export function CategorySection({ category, resources }: CategorySectionProps) {
+  return (
+    <Card className="overflow-hidden border-none shadow-md transition-all duration-200 hover:shadow-lg" >
+      <CardHeader className="bg-muted/10 pb-3" >
+        <CardTitle className="text-xl font-semibold" > {category} </CardTitle>
+      </CardHeader>
+      < CardContent className="p-4" >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" >
+          {
+            resources.map((resource) => (
+              <ResourceCard
+                key={resource.name}
+                name={resource.name}
+                url={resource.url}
+                description={resource.description}
+              />
+            ))
+          }
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
