@@ -69,7 +69,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
       const validatedData = signupSchema.parse(formData)
       setIsLoading(true)
 
-      // Send request to signup API
+      // Call the signup API
       const result = await signUp({
         name: validatedData.name,
         email: validatedData.email,

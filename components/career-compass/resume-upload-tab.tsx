@@ -23,10 +23,6 @@ export default function ResumeUploadTab() {
   const [uploadStage, setUploadStage] = useState<"idle" | "uploading" | "validating" | "complete">("idle")
   const [showConfetti, setShowConfetti] = useState(false)
 
-  // AI SDK chat hook for resume validation
-  const { messages, append, isLoading } = useChat({
-    api: "/api/validate-resume",
-  })
 
   // Reset progress when file changes
   useEffect(() => {
@@ -42,19 +38,21 @@ export default function ResumeUploadTab() {
 
   // Simulate upload progress
   const simulateUploadProgress = () => {
-    let progress = 0
+    let progress = 0;
     const interval = setInterval(() => {
-      progress += Math.random() * 10
+      // Use smaller, consistent increments (3-4%) for smoother animation
+      progress += 3 + (Math.random() * 1);
+
       if (progress >= 100) {
-        progress = 100
-        clearInterval(interval)
-        setUploadProgress(100)
-        setUploadStage("validating")
-        validateResume()
+        progress = 100;
+        clearInterval(interval);
+        setUploadProgress(100);
+        setUploadStage("validating");
+        validateResume();
       } else {
-        setUploadProgress(progress)
+        setUploadProgress(progress);
       }
-    }, 200)
+    }, 50); // Faster interval (50ms instead of 200ms)
   }
 
   // Function to extract text from DOCX
@@ -83,33 +81,34 @@ export default function ResumeUploadTab() {
 
       // Extract text - now only for DOCX
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
-
+      fileContent = await extractDocxText(file);
       if (fileExtension === 'docx') {
-        fileContent = await extractDocxText(file);
         console.log('--- Extracted DOCX Text ---');
         console.log(fileContent);
         console.log('--- End of DOCX Text ---');
-      } else {
-        // Fallback for other formats (though UI should prevent this)
-        fileContent = await file.text();
-        console.log('--- Extracted Text from Other Format ---');
-        console.log(fileContent);
-        console.log('--- End of Other Format Text ---');
       }
 
       // Use AI SDK to validate if it's a resume
-      await append({
-        role: "user",
-        content: `Validate if this is a resume: ${fileContent.substring(0, 2000)}...`,
-      })
+      const response = await fetch("/api/validate-resume", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: fileContent.substring(0, 2000),
+          filename: file.name,
+          fileType: fileExtension || "unknown"
+        }),
+      });
 
-      // Check the AI response
-      const aiResponse = messages[messages.length - 1]?.content.toLowerCase() || ""
-      const isValid = aiResponse.includes("valid resume") || aiResponse.includes("is a resume")
+      const validationResult = await response.json();
 
-      setIsValidResume(isValid)
-      setIsValidating(false)
-      setUploadStage("complete")
+      // Check if the resume is valid based on direct API response
+      const isValid = validationResult.isValid;
+
+      setIsValidResume(isValid);
+      setIsValidating(false);
+      setUploadStage("complete");
 
       if (isValid) {
         setShowConfetti(true)
