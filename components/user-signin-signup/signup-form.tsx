@@ -6,31 +6,12 @@ import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { object, string } from "zod"
+import { signupSchema } from "@/lib/validations/auth" // Import schema from auth validation
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-// Create signup-specific schema
-const signupSchema = object({
-  name: string({ required_error: "Name is required" })
-    .min(4, "Name must be more than 4 characters")
-    .max(50, "Name must be less than 50 characters"),
-  email: string({ required_error: "Email is required" })
-    .min(1, "Email is required")
-    .email("Invalid email"),
-  password: string({ required_error: "Password is required" })
-    .min(1, "Password is required")
-    .min(8, "Password must be more than 8 characters")
-    .max(32, "Password must be less than 32 characters"),
-  confirmPassword: string({ required_error: "Confirm Password is required" })
-    .min(1, "Confirm Password is required"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
 
 export function SignupForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   const router = useRouter()
@@ -53,7 +34,7 @@ export function SignupForm({ className, ...props }: React.ComponentPropsWithoutR
     setErrors({})
 
     try {
-      // Validate form data
+      // Validate form data using imported schema
       const validatedData = signupSchema.parse(formData)
       setIsLoading(true)
 

@@ -5,14 +5,13 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/auth"
 import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
-import { ResumeSubmissionForm } from "@/components/career-compass/resume-submission-form"
+import CareerAnalysis from "@/components/career-compass/career-compass-ui"
 
 export default async function Page() {
   const session = await auth()
@@ -43,13 +42,8 @@ export default async function Page() {
           </div>
         </header>
 
-        <main className="flex-1 p-6">
-          <h1 className="text-2xl font-bold mb-6">Career Compass</h1>
-          <p className="text-muted-foreground mb-8">
-            Upload your resume or manually enter your details to get personalized career recommendations.
-          </p>
-
-          <ResumeSubmissionForm />
+        <main className="p-6">
+          <CareerAnalysis />
         </main>
       </SidebarInset>
     </SidebarProvider>

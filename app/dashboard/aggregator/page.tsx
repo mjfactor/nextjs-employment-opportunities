@@ -12,8 +12,8 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { auth } from "@/auth"
 import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
 
-import { JobResourcesUI } from "@/components/aggregator/job-resources-ui"
-import jobResources from "@/components/aggregator/job-resources.json"
+import { jobResources } from "@/components/aggregator/job-resources"
+import JobResourcesUI from "@/components/aggregator/job-resources-ui"
 
 export default async function Page() {
   const session = await auth()
@@ -43,7 +43,7 @@ export default async function Page() {
           </div>
         </header>
 
-        <main className="min-h-screen bg-background p-4">
+        <main className="p-6">
           <JobResourcesUI resources={jobResources} />
         </main>
       </SidebarInset>

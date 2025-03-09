@@ -7,24 +7,21 @@ async function saltAndHashPassword(password: string): Promise<string> {
     const saltRounds = 10;
     return await bcrypt.hash(password, saltRounds);
 }
-// Validation schema for signup (matching frontend schema)
-const signupSchema = z.object({
-    name: z.string()
-        .min(4, "Name must be more than 4 characters")
-        .max(50, "Name must be less than 50 characters"),
-    email: z.string()
-        .email("Invalid email"),
-    password: z.string()
-        .min(8, "Password must be more than 8 characters")
-        .max(32, "Password must be less than 32 characters")
-})
 
 export async function POST(req: Request) {
     try {
         const body = await req.json()
 
-        // Validate request data
-        const { name, email, password } = signupSchema.parse(body)
+        // Extract data directly without schema validation
+        const { name, email, password } = body
+
+        // Basic validation
+        if (!name || !email || !password) {
+            return NextResponse.json(
+                { message: "Missing required fields" },
+                { status: 400 }
+            )
+        }
 
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
