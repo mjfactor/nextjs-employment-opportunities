@@ -42,10 +42,6 @@ export function AppSidebar({
             url: "/dashboard/career-compass",
           },
           {
-            title: "ATS",
-            url: "/dashboard/ats",
-          },
-          {
             title: "Aggregator",
             url: "/dashboard/aggregator",
           },
