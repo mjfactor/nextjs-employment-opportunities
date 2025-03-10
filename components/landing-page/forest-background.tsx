@@ -34,10 +34,8 @@ export default function ForestBackground() {
       color: string
 
       constructor() {
-        this.x = Math.random() * canvas.width
-        this.y = Math.random() * canvas.height
-        this.baseSize = Math.random * canvas.width
-        this.y = Math.random() * canvas.height
+        this.x = Math.random() * (canvas?.width || window.innerWidth)
+        this.y = Math.random() * (canvas?.height || window.innerHeight)
         this.baseSize = Math.random() * 2 + 0.5
         this.size = this.baseSize
         this.speedX = Math.random() * 0.3 - 0.15
@@ -60,11 +58,11 @@ export default function ForestBackground() {
         this.y += this.speedY
 
         // Boundary check
-        if (this.x > canvas.width) this.x = 0
-        else if (this.x < 0) this.x = canvas.width
+        if (this.x > (canvas?.width || 0)) this.x = 0
+        else if (this.x < 0) this.x = (canvas?.width || 0)
 
-        if (this.y > canvas.height) this.y = 0
-        else if (this.y < 0) this.y = canvas.height
+        if (this.y > (canvas?.height || 0)) this.y = 0
+        else if (this.y < 0) this.y = (canvas?.height || 0)
 
         // React to mouse position
         const dx = mouseX - this.x
