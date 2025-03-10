@@ -69,6 +69,7 @@ export function NavUser({
               onSelect={(e) => {
                 e.preventDefault();
                 signOut({
+                  callbackUrl: '/'
                 });
               }}
             >

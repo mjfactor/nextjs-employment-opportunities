@@ -77,40 +77,52 @@ export default function ResumeUploadTab() {
     setIsValidating(true)
 
     try {
-      let fileContent: string;
-
-      // Extract text - now only for DOCX
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      fileContent = await extractDocxText(file);
-      if (fileExtension === 'docx') {
-        console.log('--- Extracted DOCX Text ---');
-        console.log(fileContent);
-        console.log('--- End of DOCX Text ---');
+
+      if (fileExtension === 'pdf') {
+        // For PDF files, send directly to API
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('filename', file.name);
+        formData.append('fileType', fileExtension);
+
+        const response = await fetch("/api/validate-resume", {
+          method: "POST",
+          body: formData,
+        });
+
+        const validationResult = await response.json();
+        setIsValidResume(validationResult.isValid);
+      } else {
+        // For DOCX files, extract text first
+        let fileContent: string = await extractDocxText(file);
+        if (fileExtension === 'docx') {
+          console.log('--- Extracted DOCX Text ---');
+          console.log(fileContent);
+          console.log('--- End of DOCX Text ---');
+        }
+
+        // Use API with extracted text
+        const response = await fetch("/api/validate-resume", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: fileContent.substring(0, 2000),
+            filename: file.name,
+            fileType: fileExtension || "unknown"
+          }),
+        });
+
+        const validationResult = await response.json();
+        setIsValidResume(validationResult.isValid);
       }
 
-      // Use AI SDK to validate if it's a resume
-      const response = await fetch("/api/validate-resume", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: fileContent.substring(0, 2000),
-          filename: file.name,
-          fileType: fileExtension || "unknown"
-        }),
-      });
-
-      const validationResult = await response.json();
-
-      // Check if the resume is valid based on direct API response
-      const isValid = validationResult.isValid;
-
-      setIsValidResume(isValid);
       setIsValidating(false);
       setUploadStage("complete");
 
-      if (isValid) {
+      if (isValidResume) {
         setShowConfetti(true)
         setTimeout(() => setShowConfetti(false), 3000)
       }
@@ -168,9 +180,7 @@ export default function ResumeUploadTab() {
   const renderConfetti = () => {
     return Array.from({ length: 50 }).map((_, i) => {
       const size = Math.random() * 8 + 4
-      const color = ["bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-pink-500", "bg-purple-500"][
-        Math.floor(Math.random() * 5)
-      ]
+      const color = ["bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-pink-500", "bg-purple-500"][Math.floor(Math.random() * 5)]
 
       return (
         <motion.div
@@ -233,7 +243,7 @@ export default function ResumeUploadTab() {
                 "border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-all",
                 isDragging
                   ? "border-primary bg-primary/10 scale-102 shadow-lg"
-                  : "border-gray-300 hover:border-primary/50 hover:bg-gray-50",
+                  : "border-gray-300 hover:border-primary/70 hover:shadow-sm hover:scale-[1.01]",
                 "flex flex-col items-center justify-center gap-4",
               )}
               onDragOver={handleDragOver}
@@ -245,7 +255,7 @@ export default function ResumeUploadTab() {
                 type="file"
                 id="resume-upload"
                 className="hidden"
-                accept=".docx"
+                accept=".docx,.pdf"
                 onChange={handleFileChange}
               />
 
@@ -259,7 +269,7 @@ export default function ResumeUploadTab() {
 
               <div>
                 <p className="font-medium">Click to upload or drag and drop</p>
-                <p className="text-sm text-muted-foreground mt-1">DOCX only (max. 5MB)</p>
+                <p className="text-sm text-muted-foreground mt-1">PDF or DOCX only (max. 5MB)</p>
               </div>
             </div>
           </motion.div>
@@ -327,11 +337,10 @@ export default function ResumeUploadTab() {
                     className={cn(
                       "h-2 transition-colors",
                       uploadStage === "validating" ? "animate-pulse" : "",
-                      isValidResume === true ? "bg-green-100" : "",
-                      isValidResume === false ? "bg-red-100" : "",
+                      // Remove background colors that were making it hard to see
                       // Add indicator styling through CSS variables
-                      isValidResume === true ? "[--progress-indicator:theme(colors.green.500)]" : "",
-                      isValidResume === false ? "[--progress-indicator:theme(colors.red.500)]" : "",
+                      isValidResume === true ? "[--progress-indicator:theme(colors.green.600)]" : "",
+                      isValidResume === false ? "[--progress-indicator:theme(colors.red.600)]" : "",
                     )}
                   />
                 </div>
@@ -346,9 +355,9 @@ export default function ResumeUploadTab() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert variant="destructive" className="border-red-300 bg-red-50">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
+                  <Alert variant="destructive" className="border-red-400">
+                    <AlertCircle className="h-4 w-4 text-red-800" />
+                    <AlertDescription className="text-red-100">
                       The uploaded file does not appear to be a valid resume. Please upload a resume document.
                     </AlertDescription>
                   </Alert>
@@ -362,9 +371,9 @@ export default function ResumeUploadTab() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert className="border-green-300 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-600">
+                  <Alert className="border-green-400">
+                    <CheckCircle className="h-4 w-4 text-green-800" />
+                    <AlertDescription className="text-green-100">
                       Valid resume detected! You can now submit your resume for analysis.
                     </AlertDescription>
                   </Alert>

@@ -367,7 +367,7 @@ export default function ManualDetailsTab() {
             return (
               <Card
                 key={job.id}
-                className={`border ${Object.keys(jobErrors).length > 0 ? "border-red-200 bg-red-50/30" : "border-gray-200"}`}
+
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
