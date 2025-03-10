@@ -38,46 +38,69 @@ export default function LandingPage() {
 
   // Typing animation text
   const [displayText, setDisplayText] = useState("")
-  const fullText = "AI-Powered Career Analysis"
+  const phrases = [
+    "AI-Powered Career Analysis",
+    "Random Forest Integration",
+    "Large Language Model",
+    "Employment Opportunities"
+  ]
+  const [phraseIndex, setPhraseIndex] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    let animationTimer: NodeJS.Timeout;
+    let typingTimer: NodeJS.Timeout;
 
     const animateText = () => {
-      // Clear the text and start over
-      setDisplayText("");
-      let i = 0;
-      const typingSpeed = 50; // Base typing speed in ms
+      const currentPhrase = phrases[phraseIndex];
+      const typingSpeed = 10; // Base typing speed in ms
+      const deleteSpeed = 30; // Faster when deleting
+      const pauseBeforeDelete = 1500; // Pause before starting to delete
+      const pauseBeforeNextPhrase = 500; // Pause before typing next phrase
 
-      const typeNextChar = () => {
-        if (i < fullText.length) {
-          // Vary typing speed slightly for natural effect
-          const randomVariation = Math.random() * 20 - 10; // ±10ms variation
-          const delay = typingSpeed + randomVariation;
+      // If currently deleting
+      if (isDeleting) {
+        // Delete one character
+        setDisplayText(prev => prev.substring(0, prev.length - 1));
 
-          setTimeout(() => {
-            setDisplayText(fullText.substring(0, i + 1));
-            i++;
-            typeNextChar();
-          }, delay);
-        } else {
-          // Wait 2 seconds after completing the text before restarting
-          animationTimer = setTimeout(animateText, 3000);
+        // If all deleted, switch to typing mode and move to next phrase
+        if (displayText.length <= 1) {
+          setIsDeleting(false);
+          setPhraseIndex((prev) => (prev + 1) % phrases.length);
+          // Pause before typing the next phrase
+          typingTimer = setTimeout(animateText, pauseBeforeNextPhrase);
+          return;
         }
-      };
+      }
+      // If typing
+      else {
+        // Add one character
+        setDisplayText(currentPhrase.substring(0, displayText.length + 1));
 
-      // Start typing
-      typeNextChar();
+        // If fully typed, prepare to delete after pause
+        if (displayText.length >= currentPhrase.length) {
+          typingTimer = setTimeout(() => {
+            setIsDeleting(true);
+            animateText();
+          }, pauseBeforeDelete);
+          return;
+        }
+      }
+
+      // Schedule next animation frame with appropriate speed
+      const randomVariation = Math.random() * 20 - 10; // ±10ms variation
+      const speed = isDeleting ?
+        deleteSpeed + randomVariation :
+        typingSpeed + randomVariation;
+
+      typingTimer = setTimeout(animateText, speed);
     };
 
-    // Initial animation
-    animateText();
+    // Start animation
+    typingTimer = setTimeout(animateText, 100);
 
     // Cleanup
-    return () => {
-      clearTimeout(animationTimer);
-    };
-  }, [fullText])
+    return () => clearTimeout(typingTimer);
+  }, [displayText, phraseIndex, isDeleting, phrases]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
@@ -118,7 +141,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="text-4xl md:text-6xl font-bold text-white mb-6 max-w-4xl leading-tight"
+            className="text-4xl md:text-6xl font-bold text-white mb-6 max-w-4xl leading-tight min-h-[4rem]"
           >
             {displayText}
             <span className="inline-block w-1 h-10 ml-1 bg-green-500 animate-pulse"></span>
