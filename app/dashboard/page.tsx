@@ -12,6 +12,14 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/auth"
 import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
+import { Metadata } from "next"
+import { formatPageTitle } from "@/lib/utils"
+
+export const metadata: Metadata = {
+  title: formatPageTitle("dashboard"),
+  description: "Manage your career insights dashboard",
+}
+
 export default async function Page() {
   const session = await auth()
   if (!session) {
@@ -36,7 +44,8 @@ export default async function Page() {
             </Breadcrumb>
           </div>
         </header>
-
+        <div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

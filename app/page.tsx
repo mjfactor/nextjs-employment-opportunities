@@ -294,9 +294,6 @@ export default function LandingPage() {
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
                   Ready to harness the power of ForestAI?
                 </h2>
-                <p className="text-zinc-300 max-w-xl">
-                  Join thousands of professionals who are already leveraging our platform for career insights.
-                </p>
               </div>
 
               <AuthModal mode="signup" className="w-full md:w-auto">
