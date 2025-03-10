@@ -1,15 +1,31 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { NextRequest, NextResponse } from 'next/server';
+import { stderr } from 'process';
 
-// Define message content types for AI
-type MessageContent = 
+// ==========================================
+// Type Definitions
+// ==========================================
+type MessageContent =
   | { type: 'text'; text: string }
   | { type: 'file'; data: ArrayBuffer; mimeType: string };
 
-// Updated to handle either text or PDF buffer
-async function validateResume(input: { text?: string, file?: ArrayBuffer, filename?: string }) {
-  // Create messages based on input type
+type ResumeInput = {
+  text?: string,
+  file?: ArrayBuffer,
+  filename?: string
+};
+
+// ==========================================
+// Resume Validation Logic
+// ==========================================
+/**
+ * Validates if the provided content is a resume
+ * @param input Object containing either text or file content to analyze
+ * @returns Validation result with isValid flag
+ */
+async function validateResume(input: ResumeInput) {
+  // Create messages for AI processing
   const messages = [
     {
       role: 'user' as const,
@@ -17,44 +33,45 @@ async function validateResume(input: { text?: string, file?: ArrayBuffer, filena
     }
   ];
 
-  // Add text prompt
+  // Add instruction prompt
   messages[0].content.push({
-    type: 'text' as const,
+    type: 'text',
     text: 'Analyze the following document and determine if it\'s a resume. Only respond with "YES" if it\'s a resume or "NO" if it\'s not a resume.'
   });
 
-  // Add file data if provided
+  // Add content to analyze based on input type
   if (input.file) {
     messages[0].content.push({
-      type: 'file' as const,
+      type: 'file',
       data: input.file,
       mimeType: 'application/pdf'
     });
   } else if (input.text) {
-    // If no file but we have text, append the text to review
     messages[0].content.push({
-      type: 'text' as const,
+      type: 'text',
       text: `Content to analyze: ${input.text}`
     });
   }
-
+  stderr.write('messages: ' + JSON.stringify(messages) + '\n');
+  // Generate AI response
   const result = await generateText({
     model: google('gemini-1.5-flash'),
     messages
   });
-
-  // Extract clear boolean result
+  // Process and return results
   const isValid = result.text.toLowerCase().includes('yes');
   return { isValid, rawResponse: result };
 }
 
+// ==========================================
+// API Route Handler
+// ==========================================
 export async function POST(request: NextRequest) {
   try {
-    // Check content type to determine how to process the request
     const contentType = request.headers.get('content-type') || '';
 
+    // Handle PDF files (multipart/form-data)
     if (contentType.includes('multipart/form-data')) {
-      // Handle FormData (PDF files)
       const formData = await request.formData();
       const file = formData.get('file') as File | null;
       const filename = formData.get('filename') as string | null;
@@ -66,18 +83,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Convert file to ArrayBuffer
+      // Process file and validate
       const fileBuffer = await file.arrayBuffer();
-
-      // Validate the PDF using AI
       const validationResult = await validateResume({
         file: fileBuffer,
         filename: filename || file.name
       });
 
       return NextResponse.json(validationResult);
-    } else {
-      // Handle JSON (pre-processed text from DOCX)
+    }
+
+    // Handle text content (JSON)
+    else {
       const body = await request.json();
       const resumeText = body.text || '';
 
@@ -88,7 +105,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validate the resume text using AI
+      // Validate text content
       const validationResult = await validateResume({ text: resumeText });
 
       return NextResponse.json(validationResult);

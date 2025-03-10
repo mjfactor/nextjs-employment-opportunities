@@ -96,11 +96,6 @@ export default function ResumeUploadTab() {
       } else {
         // For DOCX files, extract text first
         let fileContent: string = await extractDocxText(file);
-        if (fileExtension === 'docx') {
-          console.log('--- Extracted DOCX Text ---');
-          console.log(fileContent);
-          console.log('--- End of DOCX Text ---');
-        }
 
         // Use API with extracted text
         const response = await fetch("/api/validate-resume", {
