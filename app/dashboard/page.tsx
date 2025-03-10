@@ -15,7 +15,7 @@ import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
 export default async function Page() {
   const session = await auth()
   if (!session) {
-    redirect("/signin")
+    redirect("/")
   }
   return (
     <SidebarProvider>
