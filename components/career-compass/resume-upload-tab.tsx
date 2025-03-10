@@ -357,7 +357,7 @@ export default function ResumeUploadTab() {
                 >
                   <Alert variant="destructive" className="border-red-400">
                     <AlertCircle className="h-4 w-4 text-red-800" />
-                    <AlertDescription className="text-red-100">
+                    <AlertDescription className="text-red-800 dark:text-red-100">
                       The uploaded file does not appear to be a valid resume. Please upload a resume document.
                     </AlertDescription>
                   </Alert>
@@ -373,7 +373,7 @@ export default function ResumeUploadTab() {
                 >
                   <Alert className="border-green-400">
                     <CheckCircle className="h-4 w-4 text-green-800" />
-                    <AlertDescription className="text-green-100">
+                    <AlertDescription className="text-green-800 dark:text-green-100">
                       Valid resume detected! You can now submit your resume for analysis.
                     </AlertDescription>
                   </Alert>
