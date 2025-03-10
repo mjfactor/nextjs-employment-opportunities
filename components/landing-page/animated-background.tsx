@@ -30,9 +30,9 @@ export default function AnimatedBackground() {
       speedY: number
       color: string
 
-      constructor(canvas: HTMLCanvasElement) {
-        this.x = Math.random() * canvas.width
-        this.y = Math.random() * canvas.height
+      constructor() {
+        this.x = Math.random() * canvas!.width
+        this.y = Math.random() * canvas!.height
         this.size = Math.random() * 2 + 0.5
         this.speedX = Math.random() * 0.5 - 0.25
         this.speedY = Math.random() * 0.5 - 0.25
@@ -53,7 +53,6 @@ export default function AnimatedBackground() {
         this.x += this.speedX
         this.y += this.speedY
 
-        // Use non-null assertion as we've already checked canvas in the useEffect
         if (this.x > canvas!.width) this.x = 0
         else if (this.x < 0) this.x = canvas!.width
 
@@ -75,7 +74,7 @@ export default function AnimatedBackground() {
     const numberOfParticles = Math.min(150, Math.floor((window.innerWidth * window.innerHeight) / 10000))
 
     for (let i = 0; i < numberOfParticles; i++) {
-      particlesArray.push(new Particle(canvas))
+      particlesArray.push(new Particle())
     }
 
     // Animation function

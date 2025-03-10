@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Trees, BrainCircuit, ArrowRight, FileText, User, Briefcase, GraduationCap } from "lucide-react"
 
@@ -9,37 +9,83 @@ export default function AIFlowDiagram() {
   const [animationComplete, setAnimationComplete] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Auto-animate on load
-  useEffect(() => {
-    const timer1 = setTimeout(() => setActiveStep(0), 500)
-    const timer2 = setTimeout(() => setActiveStep(1), 2000)
-    const timer3 = setTimeout(() => setActiveStep(2), 3500)
-    const timer4 = setTimeout(() => {
-      setActiveStep(null)
-      setAnimationComplete(true)
-    }, 5000)
+  // Add this animationSequence function at the top of the component
+  const animationSequence = useCallback(() => {
+    // Start with a clean state
+    setActiveStep(null)
+    setAnimationComplete(false)
 
-    return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
-      clearTimeout(timer3)
-      clearTimeout(timer4)
-    }
+    // Schedule the animation steps with requestAnimationFrame for smoother performance
+    requestAnimationFrame(() => {
+      // First step after a short delay
+      setTimeout(() => {
+        setActiveStep(0)
+
+        // Second step
+        setTimeout(() => {
+          setActiveStep(1)
+
+          // Third step
+          setTimeout(() => {
+            setActiveStep(2)
+
+            // Complete animation
+            setTimeout(() => {
+              setActiveStep(null)
+              setAnimationComplete(true)
+            }, 1500)
+          }, 1500)
+        }, 1500)
+      }, 500)
+    })
   }, [])
 
-  // Restart animation on hover
-  const handleContainerHover = () => {
-    if (animationComplete) {
+  // Optimize the animation performance in the AI Flow Diagram
+  // Replace the useEffect for auto-animation with this optimized version
+  useEffect(() => {
+    // Use a single timeout for better performance
+    const animationSequence = () => {
+      // Start with a clean state
+      setActiveStep(null)
       setAnimationComplete(false)
-      setActiveStep(0)
-      setTimeout(() => setActiveStep(1), 1500)
-      setTimeout(() => setActiveStep(2), 3000)
-      setTimeout(() => {
-        setActiveStep(null)
-        setAnimationComplete(true)
-      }, 4500)
+
+      // Schedule the animation steps with requestAnimationFrame for smoother performance
+      requestAnimationFrame(() => {
+        // First step after a short delay
+        setTimeout(() => {
+          setActiveStep(0)
+
+          // Second step
+          setTimeout(() => {
+            setActiveStep(1)
+
+            // Third step
+            setTimeout(() => {
+              setActiveStep(2)
+
+              // Complete animation
+              setTimeout(() => {
+                setActiveStep(null)
+                setAnimationComplete(true)
+              }, 1500)
+            }, 1500)
+          }, 1500)
+        }, 500)
+      })
     }
-  }
+
+    // Start the animation sequence
+    animationSequence()
+
+    // No cleanup needed as we're using a single animation sequence
+  }, [])
+
+  // Replace the handleContainerHover function with this optimized version
+  const handleContainerHover = useCallback(() => {
+    if (animationComplete) {
+      animationSequence()
+    }
+  }, [animationComplete, animationSequence])
 
   return (
     <div ref={containerRef} className="py-8 px-4 relative" onMouseEnter={handleContainerHover}>
@@ -115,7 +161,12 @@ export default function AIFlowDiagram() {
               className="absolute h-2 w-2 rounded-full bg-green-500 hidden md:block"
               initial={{ x: "-50px", opacity: 0 }}
               animate={{ x: "50px", opacity: [0, 1, 0] }}
-              transition={{ duration: 1, repeat: 1, repeatType: "loop" }}
+              transition={{
+                duration: 1,
+                ease: "easeInOut",
+                times: [0, 0.5, 1],
+                repeatDelay: 0.3,
+              }}
             />
           )}
         </motion.div>
@@ -144,7 +195,7 @@ export default function AIFlowDiagram() {
               className="absolute inset-0 rounded-lg overflow-hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.3 }}
             >
               <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 gap-2">
                 {Array.from({ length: 36 }).map((_, i) => (
@@ -153,7 +204,11 @@ export default function AIFlowDiagram() {
                     className="bg-green-500 rounded-full"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.5 }}
-                    transition={{ duration: 0.2, delay: i * 0.01 }}
+                    transition={{
+                      duration: 0.2,
+                      delay: Math.min(i * 0.01, 0.3), // Cap the maximum delay
+                      ease: "easeOut",
+                    }}
                   />
                 ))}
               </div>

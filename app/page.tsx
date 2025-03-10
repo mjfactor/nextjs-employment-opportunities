@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, BrainCircuit, Trees, Sparkles, ChevronDown } from "lucide-react"
 import AuthModal from "@/components/landing-page/auth-modal"
-import ForestBackground from "@/components/landing-page/forest-background"
+import GridBackground from "@/components/landing-page/grid-background"
 import FeatureCard from "@/components/landing-page/feature-card"
 import { motion, useScroll, useTransform } from "framer-motion"
 import AIFlowDiagram from "@/components/landing-page/ai-flow-diagram"
@@ -41,22 +41,47 @@ export default function LandingPage() {
   const fullText = "AI-Powered Career Analysis"
 
   useEffect(() => {
-    let i = 0
-    const typingInterval = setInterval(() => {
-      if (i < fullText.length) {
-        setDisplayText(fullText.substring(0, i + 1))
-        i++
-      } else {
-        clearInterval(typingInterval)
-      }
-    }, 100)
+    let animationTimer: NodeJS.Timeout;
 
-    return () => clearInterval(typingInterval)
-  }, [])
+    const animateText = () => {
+      // Clear the text and start over
+      setDisplayText("");
+      let i = 0;
+      const typingSpeed = 50; // Base typing speed in ms
+
+      const typeNextChar = () => {
+        if (i < fullText.length) {
+          // Vary typing speed slightly for natural effect
+          const randomVariation = Math.random() * 20 - 10; // ±10ms variation
+          const delay = typingSpeed + randomVariation;
+
+          setTimeout(() => {
+            setDisplayText(fullText.substring(0, i + 1));
+            i++;
+            typeNextChar();
+          }, delay);
+        } else {
+          // Wait 2 seconds after completing the text before restarting
+          animationTimer = setTimeout(animateText, 3000);
+        }
+      };
+
+      // Start typing
+      typeNextChar();
+    };
+
+    // Initial animation
+    animateText();
+
+    // Cleanup
+    return () => {
+      clearTimeout(animationTimer);
+    };
+  }, [fullText])
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
-      <ForestBackground />
+      <GridBackground />
 
       <header className="relative z-10">
         <nav className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between py-6">
