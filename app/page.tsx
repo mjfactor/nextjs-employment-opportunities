@@ -47,25 +47,42 @@ export default function LandingPage() {
   const [phraseIndex, setPhraseIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Add refs to track state without triggering re-renders
+  const displayTextRef = useRef("")
+  const phraseIndexRef = useRef(0)
+  const isDeletingRef = useRef(false)
+
   useEffect(() => {
     let typingTimer: NodeJS.Timeout;
 
+    // Update refs initially to match state
+    displayTextRef.current = displayText
+    phraseIndexRef.current = phraseIndex
+    isDeletingRef.current = isDeleting
+
     const animateText = () => {
-      const currentPhrase = phrases[phraseIndex];
-      const typingSpeed = 10; // Base typing speed in ms
-      const deleteSpeed = 30; // Faster when deleting
-      const pauseBeforeDelete = 1500; // Pause before starting to delete
-      const pauseBeforeNextPhrase = 500; // Pause before typing next phrase
+      const currentPhrase = phrases[phraseIndexRef.current];
+      const typingSpeed = 40; // Faster base typing speed
+      const deleteSpeed = 15; // Faster deletion speed
+      const pauseBeforeDelete = 1200; // Slightly shorter pause
+      const pauseBeforeNextPhrase = 400; // Slightly shorter pause
 
       // If currently deleting
-      if (isDeleting) {
+      if (isDeletingRef.current) {
         // Delete one character
-        setDisplayText(prev => prev.substring(0, prev.length - 1));
+        const newText = displayTextRef.current.substring(0, displayTextRef.current.length - 1);
+        displayTextRef.current = newText;
+        setDisplayText(newText);
 
         // If all deleted, switch to typing mode and move to next phrase
-        if (displayText.length <= 1) {
+        if (newText.length === 0) {
+          isDeletingRef.current = false;
           setIsDeleting(false);
-          setPhraseIndex((prev) => (prev + 1) % phrases.length);
+
+          const nextPhraseIndex = (phraseIndexRef.current + 1) % phrases.length;
+          phraseIndexRef.current = nextPhraseIndex;
+          setPhraseIndex(nextPhraseIndex);
+
           // Pause before typing the next phrase
           typingTimer = setTimeout(animateText, pauseBeforeNextPhrase);
           return;
@@ -74,11 +91,14 @@ export default function LandingPage() {
       // If typing
       else {
         // Add one character
-        setDisplayText(currentPhrase.substring(0, displayText.length + 1));
+        const newText = currentPhrase.substring(0, displayTextRef.current.length + 1);
+        displayTextRef.current = newText;
+        setDisplayText(newText);
 
         // If fully typed, prepare to delete after pause
-        if (displayText.length >= currentPhrase.length) {
+        if (newText.length === currentPhrase.length) {
           typingTimer = setTimeout(() => {
+            isDeletingRef.current = true;
             setIsDeleting(true);
             animateText();
           }, pauseBeforeDelete);
@@ -87,10 +107,10 @@ export default function LandingPage() {
       }
 
       // Schedule next animation frame with appropriate speed
-      const randomVariation = Math.random() * 20 - 10; // ±10ms variation
-      const speed = isDeleting ?
-        deleteSpeed + randomVariation :
-        typingSpeed + randomVariation;
+      const randomVariation = Math.random() * 10 - 5; // Smaller ±5ms variation
+      const speed = isDeletingRef.current ?
+        Math.max(10, deleteSpeed + randomVariation) :
+        Math.max(5, typingSpeed - displayTextRef.current.length); // Type faster as we progress
 
       typingTimer = setTimeout(animateText, speed);
     };
@@ -100,7 +120,7 @@ export default function LandingPage() {
 
     // Cleanup
     return () => clearTimeout(typingTimer);
-  }, [displayText, phraseIndex, isDeleting, phrases]);
+  }, []); // No dependencies for smoother animation
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
@@ -343,7 +363,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   )
 }
 
