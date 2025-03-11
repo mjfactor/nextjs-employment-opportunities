@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useChat } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Upload, FileText, AlertCircle, CheckCircle, Eye, X } from "lucide-react"
@@ -12,6 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { motion, AnimatePresence } from "framer-motion"
 import mammoth from 'mammoth'
+// Import the server actions
+import { validateResumeFile, validateResumeText } from "@/lib/actions/resume-validator"
 
 export default function ResumeUploadTab() {
   const [file, setFile] = useState<File | null>(null)
@@ -80,47 +81,38 @@ export default function ResumeUploadTab() {
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
       if (fileExtension === 'pdf') {
-        // For PDF files, send directly to API
+        // For PDF files, use the server action directly
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('filename', file.name);
-        formData.append('fileType', fileExtension);
 
-        const response = await fetch("/api/validate-resume", {
-          method: "POST",
-          body: formData,
-        });
-
-        const validationResult = await response.json();
+        const validationResult = await validateResumeFile(formData);
         setIsValidResume(validationResult.isValid);
+
+        if (validationResult.error) {
+          console.error("Validation error:", validationResult.error);
+        }
       } else {
-        // For DOCX files, extract text first
-        let fileContent: string = await extractDocxText(file);
+        // For DOCX files, extract text first then use the server action
+        const fileContent: string = await extractDocxText(file);
 
-        // Use API with extracted text
-        const response = await fetch("/api/validate-resume", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: fileContent.substring(0, 2000),
-            filename: file.name,
-            fileType: fileExtension || "unknown"
-          }),
-        });
-
-        const validationResult = await response.json();
+        const validationResult = await validateResumeText(fileContent.substring(0, 2000));
         setIsValidResume(validationResult.isValid);
+
+        if (validationResult.error) {
+          console.error("Validation error:", validationResult.error);
+        }
       }
 
       setIsValidating(false);
       setUploadStage("complete");
 
-      if (isValidResume) {
-        setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 3000)
-      }
+      // Fix the timing issue - moved this check after we set the state
+      setTimeout(() => {
+        if (isValidResume) {
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 3000);
+        }
+      }, 0);
     } catch (error) {
       console.error("Error processing file:", error)
       setIsValidResume(false)

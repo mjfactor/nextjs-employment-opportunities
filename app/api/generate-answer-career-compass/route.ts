@@ -118,6 +118,9 @@ For each role (7-8 total, tailored to experience level):
    - Ensure language is clear and accessible. Avoid overly technical terms unless necessary, and define them if used.
 `
     });
+  for await (const textPart of textStream) {
+    console.log(textPart);
+  }
 
 
 }
