@@ -10,7 +10,7 @@ export default function CareerAnalysis() {
     const [activeTab, setActiveTab] = useState("resume-upload")
 
     return (
-        <div className="space-y-6 w-full">
+        <div className="space-y-6 w-full max-w-[95rem] mx-auto">
             <Tabs defaultValue="resume-upload" className="w-full" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                     <TabsTrigger value="resume-upload">Resume Upload</TabsTrigger>
