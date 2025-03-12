@@ -29,38 +29,37 @@ type ValidationResult = {
  */
 export async function validateResume(input: ResumeInput): Promise<ValidationResult> {
     try {
-        // Create messages for AI processing
-        const messages = [
-            {
-                role: 'user' as const,
-                content: [] as MessageContent[],
-            }
-        ];
-
-        // Add instruction prompt
-        messages[0].content.push({
-            type: 'text',
-            text: 'Analyze the following document and determine if it\'s a resume. Only respond with "YES" if it\'s a resume or "NO" if it\'s not a resume.'
-        });
-
-        // Add content to analyze based on input type
-        if (input.file) {
-            messages[0].content.push({
-                type: 'file',
-                data: input.file,
-                mimeType: 'application/pdf'
-            });
-        } else if (input.text) {
-            messages[0].content.push({
-                type: 'text',
-                text: `Content to analyze: ${input.text}`
-            });
-        } else {
+        // Check for missing content early
+        if (!input.file && !input.text) {
             return {
                 isValid: false,
                 error: 'No content provided for validation'
             };
         }
+
+        // Prepare instruction for AI
+        const instruction: MessageContent = {
+            type: 'text',
+            text: 'Analyze the following document and determine if it\'s a resume. Only respond with "YES" if it\'s a resume or "NO" if it\'s not a resume.'
+        };
+
+        // Prepare content to analyze based on input type
+        const contentToAnalyze: MessageContent = input.file
+            ? {
+                type: 'file',
+                data: input.file,
+                mimeType: 'application/pdf'
+            }
+            : {
+                type: 'text',
+                text: `Content to analyze: ${input.text}`
+            };
+
+        // Create message with both instruction and content
+        const messages = [{
+            role: 'user' as const,
+            content: [instruction, contentToAnalyze]
+        }];
 
         // Generate AI response
         const result = await generateText({
@@ -68,11 +67,11 @@ export async function validateResume(input: ResumeInput): Promise<ValidationResu
             messages
         });
 
-        // Process and return results - don't return the raw response object
+        // Process and return results
         const isValid = result.text.toLowerCase().includes('yes');
         return {
             isValid,
-            message: result.text.trim() // Just return the text response, not the full object
+            message: result.text.trim()
         };
     } catch (error) {
         console.error('Error validating resume:', error);

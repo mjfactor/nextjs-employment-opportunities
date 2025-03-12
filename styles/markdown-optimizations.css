@@ -1,0 +1,97 @@
+/* Table performance and style optimizations */
+.markdown-content table {
+    contain: content;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.markdown-content th {
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background-color: rgba(248, 250, 252, 0.8);
+    border-bottom: 1px solid rgba(226, 232, 240, 1);
+    color: rgb(51, 65, 85);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.markdown-content td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    vertical-align: top;
+}
+
+.markdown-content tr:last-child td {
+    border-bottom: none;
+}
+
+/* Zebra striping */
+.markdown-content tbody tr:nth-child(even) {
+    background-color: rgba(248, 250, 252, 0.5);
+}
+
+.markdown-content tbody tr:hover {
+    background-color: rgba(236, 242, 254, 0.5);
+    transition: background-color 0.15s ease;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    .markdown-content th {
+        background-color: rgba(30, 41, 59, 0.8);
+        border-bottom: 1px solid rgba(51, 65, 85, 1);
+        color: rgb(203, 213, 225);
+    }
+
+    .markdown-content td {
+        border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+    }
+
+    .markdown-content tbody tr:nth-child(even) {
+        background-color: rgba(30, 41, 59, 0.3);
+    }
+
+    .markdown-content tbody tr:hover {
+        background-color: rgba(29, 78, 216, 0.1);
+    }
+}
+
+/* Mobile optimizations */
+@media screen and (max-width: 768px) {
+    .markdown-content table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Link styling - keep the blue color as requested */
+.markdown-content a {
+    color: #2563eb;
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: rgba(37, 99, 235, 0.3);
+    text-underline-offset: 2px;
+    transition: all 0.2s ease;
+}
+
+.markdown-content a:hover {
+    text-decoration-color: rgba(37, 99, 235, 0.8);
+    color: #1e40af;
+}
+
+/* External link icon */
+.markdown-content a[href^="http"]:after {
+    content: "";
+    width: 0.85em;
+    height: 0.85em;
+    margin-left: 0.2em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: inline-block;
+    vertical-align: middle;
+}

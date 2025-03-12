@@ -1,18 +1,22 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Upload, FileText, AlertCircle, CheckCircle, Eye, X } from "lucide-react"
+import { Upload, FileText, AlertCircle, CheckCircle, Eye, X, Copy, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, px } from "framer-motion"
 import mammoth from 'mammoth'
 // Import the server actions
 import { validateResumeFile, validateResumeText } from "@/lib/actions/resume-validator"
+import { generateAnswerFromFile, generateAnswerFromText } from "@/lib/actions/generate-answer-career-compass"
+// Import markdown renderer
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import "@/styles/markdown-optimizations.css" // Re-add the CSS import
 
 export default function ResumeUploadTab() {
   const [file, setFile] = useState<File | null>(null)
@@ -23,7 +27,10 @@ export default function ResumeUploadTab() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStage, setUploadStage] = useState<"idle" | "uploading" | "validating" | "complete">("idle")
   const [showConfetti, setShowConfetti] = useState(false)
-
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [resumeContent, setResumeContent] = useState<string | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [copied, setCopied] = useState(false);
 
   // Reset progress when file changes
   useEffect(() => {
@@ -79,6 +86,7 @@ export default function ResumeUploadTab() {
 
     try {
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      let extractedText = '';
 
       if (fileExtension === 'pdf') {
         // For PDF files, use the server action directly
@@ -93,14 +101,19 @@ export default function ResumeUploadTab() {
         }
       } else {
         // For DOCX files, extract text first then use the server action
-        const fileContent: string = await extractDocxText(file);
+        extractedText = await extractDocxText(file);
 
-        const validationResult = await validateResumeText(fileContent.substring(0, 2000));
+        const validationResult = await validateResumeText(extractedText.substring(0, 2000));
         setIsValidResume(validationResult.isValid);
 
         if (validationResult.error) {
           console.error("Validation error:", validationResult.error);
         }
+      }
+
+      // Store the extracted text for later submission
+      if (extractedText) {
+        setResumeContent(extractedText);
       }
 
       setIsValidating(false);
@@ -208,13 +221,60 @@ export default function ResumeUploadTab() {
     }
   }
 
+  // Handle resume submission for analysis
+  const submitResume = async () => {
+    if (!file || !isValidResume) {
+      return;
+    }
+
+    try {
+      setIsAnalyzing(true);
+
+      // Use the appropriate method based on file type
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      let result;
+
+      if (fileExtension === 'pdf') {
+        // For PDF files, use the file upload method which handles PDFs directly
+        const formData = new FormData();
+        formData.append('file', file);
+        result = await generateAnswerFromFile(formData);
+      } else if (resumeContent) {
+        // For DOCX, use the already extracted text (we extracted it during validation)
+        result = await generateAnswerFromText(resumeContent);
+      } else {
+        throw new Error("No valid content available for analysis");
+      }
+
+      setAnalysisResult(result);
+      console.log("Analysis complete:", result);
+      // Here you could navigate to a results page or show the results in a dialog
+    } catch (error) {
+      console.error("Error analyzing resume:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Copy analysis to clipboard
+  const copyToClipboard = () => {
+    if (analysisResult?.answer) {
+      navigator.clipboard.writeText(analysisResult.answer);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-8 relative">
       {showConfetti && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">{renderConfetti()}</div>
       )}
 
-      <h2 className="text-2xl font-semibold mb-4">Upload Your Resume</h2>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Upload Your Resume</h2>
+        <p className="text-muted-foreground">Upload your resume to get personalized career recommendations</p>
+      </div>
 
       <AnimatePresence mode="wait">
         {!file ? (
@@ -227,11 +287,11 @@ export default function ResumeUploadTab() {
           >
             <div
               className={cn(
-                "border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-all",
+                "border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all bg-card/30 backdrop-blur-sm",
                 isDragging
-                  ? "border-primary bg-primary/10 scale-102 shadow-lg"
-                  : "border-gray-300 hover:border-primary/70 hover:shadow-sm hover:scale-[1.01]",
-                "flex flex-col items-center justify-center gap-4",
+                  ? "border-primary bg-primary/10 scale-[1.02] shadow-xl shadow-primary/20"
+                  : "border-gray-300/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.01]",
+                "flex flex-col items-center justify-center gap-6",
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -247,16 +307,16 @@ export default function ResumeUploadTab() {
               />
 
               <motion.div
-                className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"
-                whileHover={{ scale: 1.1 }}
+                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center shadow-inner"
+                whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Upload className="h-8 w-8 text-primary" />
+                <Upload className="h-10 w-10 text-primary" />
               </motion.div>
 
               <div>
-                <p className="font-medium">Click to upload or drag and drop</p>
-                <p className="text-sm text-muted-foreground mt-1">PDF or DOCX only (max. 5MB)</p>
+                <p className="font-medium text-lg">Click to upload or drag and drop</p>
+                <p className="text-sm text-muted-foreground mt-2">PDF or DOCX only (max. 5MB)</p>
               </div>
             </div>
           </motion.div>
@@ -267,17 +327,17 @@ export default function ResumeUploadTab() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
             key="file-preview"
-            className="space-y-4"
+            className="space-y-5"
           >
-            <Card className="p-4 relative overflow-hidden">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary" />
+            <Card className="p-5 relative overflow-hidden rounded-xl border-transparent shadow-lg shadow-primary/5">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center shadow-inner">
+                  <FileText className="h-6 w-6 text-primary" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p className="font-medium text-lg truncate">{file.name}</p>
+                  <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -285,7 +345,7 @@ export default function ResumeUploadTab() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0"
+                      className="h-9 w-9 rounded-full p-0 hover:bg-primary/10 hover:text-primary transition-colors"
                       onClick={(e) => {
                         e.stopPropagation()
                         // Open preview in modal or expand in place
@@ -300,7 +360,7 @@ export default function ResumeUploadTab() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-destructive"
+                    className="h-9 w-9 rounded-full p-0 hover:bg-red-500/10 hover:text-red-500 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation()
                       removeFile()
@@ -313,21 +373,28 @@ export default function ResumeUploadTab() {
               </div>
 
               {uploadStage !== "idle" && (
-                <div className="mt-4 space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span>{getStageText()}</span>
+                <div className="mt-5 space-y-3">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span className="flex items-center gap-2">
+                      {uploadStage === "validating" && (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                          className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full"
+                        />
+                      )}
+                      {getStageText()}
+                    </span>
                     {uploadStage === "uploading" && <span>{Math.round(uploadProgress)}%</span>}
                   </div>
 
                   <Progress
                     value={uploadProgress}
                     className={cn(
-                      "h-2 transition-colors",
+                      "h-2 rounded-full transition-colors",
                       uploadStage === "validating" ? "animate-pulse" : "",
-                      // Remove background colors that were making it hard to see
-                      // Add indicator styling through CSS variables
-                      isValidResume === true ? "[--progress-indicator:theme(colors.green.600)]" : "",
-                      isValidResume === false ? "[--progress-indicator:theme(colors.red.600)]" : "",
+                      isValidResume === true ? "[--progress-indicator:theme(colors.green.500)]" : "",
+                      isValidResume === false ? "[--progress-indicator:theme(colors.red.500)]" : "",
                     )}
                   />
                 </div>
@@ -342,7 +409,7 @@ export default function ResumeUploadTab() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert variant="destructive" className="border-red-400">
+                  <Alert variant="destructive" className="border-red-400 rounded-xl shadow-lg shadow-red-500/10">
                     <AlertCircle className="h-4 w-4 text-red-800" />
                     <AlertDescription className="text-red-800 dark:text-red-100">
                       The uploaded file does not appear to be a valid resume. Please upload a resume document.
@@ -358,8 +425,8 @@ export default function ResumeUploadTab() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert className="border-green-400">
-                    <CheckCircle className="h-4 w-4 text-green-800" />
+                  <Alert className="border-green-400 rounded-xl bg-green-50 dark:bg-green-900/20 shadow-lg shadow-green-500/10">
+                    <CheckCircle className="h-4 w-4 text-green-800 dark:text-green-400" />
                     <AlertDescription className="text-green-800 dark:text-green-100">
                       Valid resume detected! You can now submit your resume for analysis.
                     </AlertDescription>
@@ -381,15 +448,130 @@ export default function ResumeUploadTab() {
           transition={{ duration: 0.3 }}
         >
           <Button
-            disabled={!isValidResume || isValidating}
-            className="mt-4"
-            onClick={() => alert("Resume submitted successfully!")}
+            disabled={!isValidResume || isValidating || isAnalyzing}
+            className={cn(
+              "mt-2 px-6 py-6 h-auto rounded-xl font-medium text-base transition-all",
+              isAnalyzing ? "bg-primary/80" : "bg-gradient-to-r from-primary to-blue-500 hover:shadow-lg hover:shadow-primary/20"
+            )}
+            onClick={submitResume}
           >
-            Submit Resume
+            {isAnalyzing ? (
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="h-5 w-5 border-2 border-white border-t-transparent rounded-full"
+                />
+                Analyzing Resume...
+              </div>
+            ) : (
+              "Submit Resume"
+            )}
           </Button>
         </motion.div>
       </div>
+
+      {/* Analysis Results Section */}
+      <AnimatePresence>
+        {analysisResult && analysisResult.answer && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="mt-10 border rounded-xl p-8 bg-card/80 backdrop-blur-sm shadow-lg shadow-primary/5"
+          >
+            <div className="flex justify-between items-center mb-6 pb-2 border-b">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                Your Career Analysis
+              </h3>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 rounded-lg border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
+                onClick={copyToClipboard}
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied!" : "Copy"}
+              </Button>
+            </div>
+
+            <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-headings:font-semibold prose-h3:text-lg prose-h2:text-xl prose-h1:text-2xl prose-p:my-3 markdown-content">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ node, ...props }) => (
+                    <h1 className="text-2xl font-bold mt-8 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                  h2: ({ node, ...props }) => (
+                    <h2 className="text-xl font-bold mt-6 mb-3 text-primary/90" {...props} />
+                  ),
+                  h3: ({ node, ...props }) => (
+                    <h3 className="text-lg font-semibold mt-5 mb-2 text-primary/80" {...props} />
+                  ),
+                  h4: ({ node, ...props }) => (
+                    <h4 className="text-base font-semibold mt-4 mb-2 text-primary/70" {...props} />
+                  ),
+                  a: ({ node, href, ...props }) => (
+                    <a
+                      href={href}
+                      className="text-blue-600 dark:text-blue-400 font-medium underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-300"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                    />
+                  ),
+                  p: ({ node, ...props }) => (
+                    <p className="my-3 leading-relaxed" {...props} />
+                  ),
+                  ul: ({ node, ...props }) => (
+                    <ul className="list-disc pl-6 my-3 space-y-2" {...props} />
+                  ),
+                  ol: ({ node, ...props }) => (
+                    <ol className="list-decimal pl-6 my-3 space-y-2" {...props} />
+                  ),
+                  li: ({ node, ...props }) => (
+                    <li className="my-1" {...props} />
+                  ),
+                  blockquote: ({ node, ...props }) => (
+                    <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic bg-slate-50 dark:bg-slate-800/50 rounded-r-lg" {...props} />
+                  ),
+                  table: ({ node, ...props }) => (
+                    <div className="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <table className="border-collapse w-full bg-slate-50 dark:bg-slate-900/50" {...props} />
+                    </div>
+                  ),
+                  thead: ({ node, ...props }) => (
+                    <thead className="border-b border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                  tr: ({ node, ...props }) => (
+                    <tr className="border-b border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                  th: ({ node, ...props }) => (
+                    <th className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3 text-left font-medium" {...props} />
+                  ),
+                  td: ({ node, ...props }) => (
+                    <td className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3" {...props} />
+                  ),
+                  hr: ({ node, ...props }) => (
+                    <hr className="my-8 border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                }}
+              >
+                {analysisResult.answer}
+              </ReactMarkdown>
+            </div>
+
+            {analysisResult.error && (
+              <Alert variant="destructive" className="mt-6 rounded-xl">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{analysisResult.error}</AlertDescription>
+              </Alert>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-
