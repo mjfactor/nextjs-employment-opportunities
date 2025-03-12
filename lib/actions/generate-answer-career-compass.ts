@@ -164,89 +164,29 @@ Analyze the resume in the attached PDF file using this format:
                 ]
             }];
 
-            try {
-                // Generate AI response with file - use more robust error handling for Vercel environment
-                const result = await Promise.race([
-                    generateText({
-                        model: model,
-                        messages: messages,
-                        temperature: 0.7, // Adding temperature parameter for more consistent results
-                        maxTokens: 4000, // Control response length
-                    }).catch(err => {
-                        console.error('AI SDK error details:', err);
-                        throw new Error(`AI service error: ${err.message || 'Unknown error'}`);
-                    }),
-                    new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error('Response timeout after 50 seconds')), 50000)
-                    )
-                ]);
+            // Generate AI response with file
+            const result = await generateText({
+                model: model,
+                messages: messages
+            });
 
-                // More robust result validation
-                if (!result) {
-                    throw new Error('Empty response received from AI service');
-                }
-
-                if (typeof result !== 'object' || !('text' in result) || typeof result.text !== 'string') {
-                    console.error('Unexpected response structure:', result);
-                    throw new Error('Invalid response format from AI service');
-                }
-
-                if (!result.text || result.text.trim() === '') {
-                    throw new Error('AI returned empty text response');
-                }
-
-                return {
-                    answer: result.text
-                };
-            } catch (innerError) {
-                console.error('AI generation error with PDF:', innerError);
-                return {
-                    answer: '',
-                    error: `PDF analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error processing PDF'}`
-                };
-            }
+            return {
+                answer: result.text
+            };
         } else if (input.text) {
             // Text-based approach for direct text input
-            try {
-                // Consider truncating very long text to avoid API timeouts
-                const truncatedText = input.text.length > 15000 ?
-                    input.text.substring(0, 15000) + "... (content truncated for processing)" :
-                    input.text;
-
-                const result = await Promise.race([
-                    generateText({
-                        model: model,
-                        prompt: `${CAREER_COMPASS_PROMPT}
+            const result = await generateText({
+                model: model,
+                prompt: `${CAREER_COMPASS_PROMPT}
 
 RESUME CONTENT TO ANALYZE:
-${truncatedText}
-`,
-                        temperature: 0.7, // Adding temperature parameter
-                        maxTokens: 4000, // Control response length
-                    }).catch(err => {
-                        console.error('AI SDK text processing error:', err);
-                        throw new Error(`AI text processing error: ${err.message || 'Unknown error'}`);
-                    }),
-                    new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error('Response timeout after 50 seconds')), 50000)
-                    )
-                ]);
+${input.text}
+`
+            });
 
-                // More robust validation
-                if (!result || !result.text || result.text.trim() === '') {
-                    throw new Error('Empty or invalid response from AI service');
-                }
-
-                return {
-                    answer: result.text
-                };
-            } catch (innerError) {
-                console.error('AI generation error with text:', innerError);
-                return {
-                    answer: '',
-                    error: `Text analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error processing text'}`
-                };
-            }
+            return {
+                answer: result.text
+            };
         } else {
             return {
                 answer: '',
@@ -257,7 +197,7 @@ ${truncatedText}
         console.error('Error generating career compass answer:', error);
         return {
             answer: '',
-            error: `AI processing error: ${error instanceof Error ? error.message : 'Failed to generate career compass answer'}`
+            error: error instanceof Error ? error.message : 'Failed to generate career compass answer'
         };
     }
 }
@@ -285,26 +225,11 @@ export async function generateAnswerFromFile(formData: FormData): Promise<Career
         }
 
         // Process file
-        try {
-            const fileBuffer = await file.arrayBuffer();
-            // Check file size
-            if (fileBuffer.byteLength > 5000000) { // 5MB limit
-                return {
-                    answer: '',
-                    error: 'File size exceeds the 5MB limit'
-                };
-            }
-            return await generateAnswerCareerCompass({
-                file: fileBuffer,
-                filename: file.name
-            });
-        } catch (fileError) {
-            console.error('File processing error:', fileError);
-            return {
-                answer: '',
-                error: `File processing error: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`
-            };
-        }
+        const fileBuffer = await file.arrayBuffer();
+        return await generateAnswerCareerCompass({
+            file: fileBuffer,
+            filename: file.name
+        });
     } catch (error) {
         console.error('Error processing file for career analysis:', error);
         return {
@@ -325,11 +250,5 @@ export async function generateAnswerFromText(text: string): Promise<CareerCompas
         };
     }
 
-    // Limit text size to prevent issues
-    const trimmedText = text.trim().substring(0, 20000); // Limit to 20K characters
-    if (trimmedText.length < text.trim().length) {
-        console.warn('Text was truncated to 20,000 characters for analysis');
-    }
-
-    return await generateAnswerCareerCompass({ text: trimmedText });
+    return await generateAnswerCareerCompass({ text });
 }

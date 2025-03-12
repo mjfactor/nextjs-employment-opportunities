@@ -229,7 +229,6 @@ export default function ResumeUploadTab() {
 
     try {
       setIsAnalyzing(true);
-      setAnalysisResult(null); // Clear previous results
 
       // Use the appropriate method based on file type
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
@@ -239,44 +238,19 @@ export default function ResumeUploadTab() {
         // For PDF files, use the file upload method which handles PDFs directly
         const formData = new FormData();
         formData.append('file', file);
-
-        // Add a timeout for the request - extended for Vercel deployment
-        result = await Promise.race([
-          generateAnswerFromFile(formData),
-          new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out after 60 seconds. This may be due to serverless function limitations.')), 60000)
-          )
-        ]);
+        result = await generateAnswerFromFile(formData);
       } else if (resumeContent) {
         // For DOCX, use the already extracted text (we extracted it during validation)
-        // Add a timeout for the request
-        result = await Promise.race([
-          generateAnswerFromText(resumeContent),
-          new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out after 60 seconds. This may be due to serverless function limitations.')), 60000)
-          )
-        ]);
+        result = await generateAnswerFromText(resumeContent);
       } else {
         throw new Error("No valid content available for analysis");
       }
 
-      if (!result?.answer && !result?.error) {
-        throw new Error("Empty response from analysis service");
-      }
-
       setAnalysisResult(result);
       console.log("Analysis complete:", result);
+      // Here you could navigate to a results page or show the results in a dialog
     } catch (error) {
       console.error("Error analyzing resume:", error);
-
-      // Set a user-friendly error message
-      setAnalysisResult({
-        answer: '',
-        error: error instanceof Error
-          ? `Analysis failed: ${error.message}${error.message.includes('timed out') ?
-            '\n\nTip: Try again or use a smaller file. Vercel has strict serverless function limits.' : ''}`
-          : 'An unexpected error occurred during analysis. Please try again.'
-      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -499,7 +473,7 @@ export default function ResumeUploadTab() {
 
       {/* Analysis Results Section */}
       <AnimatePresence>
-        {analysisResult && (
+        {analysisResult && analysisResult.answer && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -509,96 +483,90 @@ export default function ResumeUploadTab() {
           >
             <div className="flex justify-between items-center mb-6 pb-2 border-b">
               <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
-                {analysisResult.error ? 'Analysis Error' : 'Your Career Analysis'}
+                Your Career Analysis
               </h3>
 
-              {analysisResult.answer && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 rounded-lg border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
-                  onClick={copyToClipboard}
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied ? "Copied!" : "Copy"}
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 rounded-lg border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
+                onClick={copyToClipboard}
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied!" : "Copy"}
+              </Button>
             </div>
 
-            {analysisResult.answer ? (
-              <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-headings:font-semibold prose-h3:text-lg prose-h2:text-xl prose-h1:text-2xl prose-p:my-3 markdown-content">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ node, ...props }) => (
-                      <h1 className="text-2xl font-bold mt-8 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800" {...props} />
-                    ),
-                    h2: ({ node, ...props }) => (
-                      <h2 className="text-xl font-bold mt-6 mb-3 text-primary/90" {...props} />
-                    ),
-                    h3: ({ node, ...props }) => (
-                      <h3 className="text-lg font-semibold mt-5 mb-2 text-primary/80" {...props} />
-                    ),
-                    h4: ({ node, ...props }) => (
-                      <h4 className="text-base font-semibold mt-4 mb-2 text-primary/70" {...props} />
-                    ),
-                    a: ({ node, href, ...props }) => (
-                      <a
-                        href={href}
-                        className="text-blue-600 dark:text-blue-400 font-medium underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-300"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        {...props}
-                      />
-                    ),
-                    p: ({ node, ...props }) => (
-                      <p className="my-3 leading-relaxed" {...props} />
-                    ),
-                    ul: ({ node, ...props }) => (
-                      <ul className="list-disc pl-6 my-3 space-y-2" {...props} />
-                    ),
-                    ol: ({ node, ...props }) => (
-                      <ol className="list-decimal pl-6 my-3 space-y-2" {...props} />
-                    ),
-                    li: ({ node, ...props }) => (
-                      <li className="my-1" {...props} />
-                    ),
-                    blockquote: ({ node, ...props }) => (
-                      <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic bg-slate-50 dark:bg-slate-800/50 rounded-r-lg" {...props} />
-                    ),
-                    table: ({ node, ...props }) => (
-                      <div className="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800">
-                        <table className="border-collapse w-full bg-slate-50 dark:bg-slate-900/50" {...props} />
-                      </div>
-                    ),
-                    thead: ({ node, ...props }) => (
-                      <thead className="border-b border-slate-200 dark:border-slate-800" {...props} />
-                    ),
-                    tr: ({ node, ...props }) => (
-                      <tr className="border-b border-slate-200 dark:border-slate-800" {...props} />
-                    ),
-                    th: ({ node, ...props }) => (
-                      <th className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3 text-left font-medium" {...props} />
-                    ),
-                    td: ({ node, ...props }) => (
-                      <td className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3" {...props} />
-                    ),
-                    hr: ({ node, ...props }) => (
-                      <hr className="my-8 border-slate-200 dark:border-slate-800" {...props} />
-                    ),
-                  }}
-                >
-                  {analysisResult.answer}
-                </ReactMarkdown>
-              </div>
-            ) : null}
+            <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-headings:font-semibold prose-h3:text-lg prose-h2:text-xl prose-h1:text-2xl prose-p:my-3 markdown-content">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ node, ...props }) => (
+                    <h1 className="text-2xl font-bold mt-8 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                  h2: ({ node, ...props }) => (
+                    <h2 className="text-xl font-bold mt-6 mb-3 text-primary/90" {...props} />
+                  ),
+                  h3: ({ node, ...props }) => (
+                    <h3 className="text-lg font-semibold mt-5 mb-2 text-primary/80" {...props} />
+                  ),
+                  h4: ({ node, ...props }) => (
+                    <h4 className="text-base font-semibold mt-4 mb-2 text-primary/70" {...props} />
+                  ),
+                  a: ({ node, href, ...props }) => (
+                    <a
+                      href={href}
+                      className="text-blue-600 dark:text-blue-400 font-medium underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-300"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                    />
+                  ),
+                  p: ({ node, ...props }) => (
+                    <p className="my-3 leading-relaxed" {...props} />
+                  ),
+                  ul: ({ node, ...props }) => (
+                    <ul className="list-disc pl-6 my-3 space-y-2" {...props} />
+                  ),
+                  ol: ({ node, ...props }) => (
+                    <ol className="list-decimal pl-6 my-3 space-y-2" {...props} />
+                  ),
+                  li: ({ node, ...props }) => (
+                    <li className="my-1" {...props} />
+                  ),
+                  blockquote: ({ node, ...props }) => (
+                    <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic bg-slate-50 dark:bg-slate-800/50 rounded-r-lg" {...props} />
+                  ),
+                  table: ({ node, ...props }) => (
+                    <div className="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <table className="border-collapse w-full bg-slate-50 dark:bg-slate-900/50" {...props} />
+                    </div>
+                  ),
+                  thead: ({ node, ...props }) => (
+                    <thead className="border-b border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                  tr: ({ node, ...props }) => (
+                    <tr className="border-b border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                  th: ({ node, ...props }) => (
+                    <th className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3 text-left font-medium" {...props} />
+                  ),
+                  td: ({ node, ...props }) => (
+                    <td className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3" {...props} />
+                  ),
+                  hr: ({ node, ...props }) => (
+                    <hr className="my-8 border-slate-200 dark:border-slate-800" {...props} />
+                  ),
+                }}
+              >
+                {analysisResult.answer}
+              </ReactMarkdown>
+            </div>
 
             {analysisResult.error && (
-              <Alert variant="destructive" className="mt-2 rounded-xl">
+              <Alert variant="destructive" className="mt-6 rounded-xl">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="font-medium">
-                  {analysisResult.error}
-                </AlertDescription>
+                <AlertDescription>{analysisResult.error}</AlertDescription>
               </Alert>
             )}
           </motion.div>
