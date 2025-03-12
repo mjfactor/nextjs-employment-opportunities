@@ -1,23 +1,22 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Upload, FileText, AlertCircle, CheckCircle, Eye, X, Copy, Check } from "lucide-react"
+import { Upload, FileText, AlertCircle, CheckCircle, Eye, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { motion, AnimatePresence, px } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import mammoth from 'mammoth'
-// Import the server actions
+// Import the server actions for validation only
 import { validateResumeFile, validateResumeText } from "@/lib/actions/resume-validator"
-import { generateAnswerFromFile, generateAnswerFromText } from "@/lib/actions/generate-answer-career-compass"
 // Import markdown renderer
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import "@/styles/markdown-optimizations.css" // Re-add the CSS import
-export const maxDuration = 60;
+import "@/styles/markdown-optimizations.css"
+
 export default function ResumeUploadTab() {
   const [file, setFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
@@ -26,11 +25,20 @@ export default function ResumeUploadTab() {
   const [isValidResume, setIsValidResume] = useState<boolean | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStage, setUploadStage] = useState<"idle" | "uploading" | "validating" | "complete">("idle")
-  const [showConfetti, setShowConfetti] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [resumeContent, setResumeContent] = useState<string | null>(null)
-  const [analysisResult, setAnalysisResult] = useState<any>(null)
-  const [copied, setCopied] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string>("")
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  // Ref to track if component is mounted
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    }
+  }, []);
 
   // Reset progress when file changes
   useEffect(() => {
@@ -118,14 +126,6 @@ export default function ResumeUploadTab() {
 
       setIsValidating(false);
       setUploadStage("complete");
-
-      // Fix the timing issue - moved this check after we set the state
-      setTimeout(() => {
-        if (isValidResume) {
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
-        }
-      }, 0);
     } catch (error) {
       console.error("Error processing file:", error)
       setIsValidResume(false)
@@ -176,37 +176,6 @@ export default function ResumeUploadTab() {
     setUploadProgress(0)
   }
 
-  // Generate confetti elements
-  const renderConfetti = () => {
-    return Array.from({ length: 50 }).map((_, i) => {
-      const size = Math.random() * 8 + 4
-      const color = ["bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-pink-500", "bg-purple-500"][Math.floor(Math.random() * 5)]
-
-      return (
-        <motion.div
-          key={i}
-          className={`absolute rounded-full ${color}`}
-          initial={{
-            x: "50%",
-            y: "50%",
-            width: size,
-            height: size,
-            opacity: 1,
-          }}
-          animate={{
-            x: `${Math.random() * 100}%`,
-            y: `${Math.random() * 100}%`,
-            opacity: 0,
-          }}
-          transition={{
-            duration: Math.random() * 2 + 1,
-            ease: "easeOut",
-          }}
-        />
-      )
-    })
-  }
-
   // Get upload stage text
   const getStageText = () => {
     switch (uploadStage) {
@@ -221,59 +190,109 @@ export default function ResumeUploadTab() {
     }
   }
 
-  // Handle resume submission for analysis
+  // Handle resume submission for analysis with streaming
   const submitResume = async () => {
-    if (!file || !isValidResume) {
+    if (!file && !resumeContent || !isValidResume) {
       return;
     }
 
     try {
       setIsAnalyzing(true);
+      setIsStreaming(true);
+      setAnalysisResult("");
+      setAnalysisError(null);
 
-      // Use the appropriate method based on file type
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      let result;
+      // Create form data for the API request
+      const formData = new FormData();
 
-      if (fileExtension === 'pdf') {
-        // For PDF files, use the file upload method which handles PDFs directly
-        const formData = new FormData();
+      if (file && file.name.toLowerCase().endsWith('.pdf')) {
+        // For PDF files, upload the file directly
         formData.append('file', file);
-        result = await generateAnswerFromFile(formData);
       } else if (resumeContent) {
-        // For DOCX, use the already extracted text (we extracted it during validation)
-        result = await generateAnswerFromText(resumeContent);
+        // For DOCX or extracted text content
+        formData.append('text', resumeContent);
       } else {
         throw new Error("No valid content available for analysis");
       }
 
-      setAnalysisResult(result);
-      console.log("Analysis complete:", result);
-      // Here you could navigate to a results page or show the results in a dialog
+      // Make the API call with streaming response
+      const response = await fetch('/api/career-compass', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        // Try to parse error response
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Error: ${response.status}`);
+        } catch (e) {
+          throw new Error(`Error: ${response.status}`);
+        }
+      }
+
+      // Read and process the streaming response
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response has no readable body");
+      }
+
+      const decoder = new TextDecoder();
+      let done = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          if (isMounted.current) {
+            setAnalysisResult(prev => prev + chunk);
+          }
+        }
+
+        if (done) break;
+      }
+
     } catch (error) {
       console.error("Error analyzing resume:", error);
+      setAnalysisError(error instanceof Error ? error.message : 'An error occurred during analysis');
     } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  // Copy analysis to clipboard
-  const copyToClipboard = () => {
-    if (analysisResult?.answer) {
-      navigator.clipboard.writeText(analysisResult.answer);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (isMounted.current) {
+        setIsAnalyzing(false);
+        setIsStreaming(false);
+      }
     }
   };
 
   return (
     <div className="space-y-8 relative">
-      {showConfetti && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">{renderConfetti()}</div>
-      )}
+      <div className="flex flex-col gap-4">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Unlock Your Career Potential</h2>
+        <p className="text-muted-foreground text-lg">Upload your resume and let our AI analyze your skills, experience, and potential. Get personalized insights to accelerate your career journey.</p>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Upload Your Resume</h2>
-        <p className="text-muted-foreground">Upload your resume to get personalized career recommendations</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-sm">AI-powered skill assessment</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <Upload className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-sm">Smart document parsing</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-sm">Detailed career recommendations</p>
+          </div>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -462,7 +481,7 @@ export default function ResumeUploadTab() {
                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                   className="h-5 w-5 border-2 border-white border-t-transparent rounded-full"
                 />
-                Analyzing Resume...
+                {isStreaming ? "Analyzing Resume (Streaming...)" : "Analyzing Resume..."}
               </div>
             ) : (
               "Submit Resume"
@@ -471,103 +490,76 @@ export default function ResumeUploadTab() {
         </motion.div>
       </div>
 
-      {/* Analysis Results Section */}
-      <AnimatePresence>
-        {analysisResult && analysisResult.answer && (
+      {/* Analysis Results Section - Always show when streaming or has content */}
+      <AnimatePresence mode="wait">
+        {(isStreaming || analysisResult) && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
-            className="mt-10 border rounded-xl p-8 bg-card/80 backdrop-blur-sm shadow-lg shadow-primary/5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mt-10 border rounded-xl p-8 bg-card shadow-md"
           >
-            <div className="flex justify-between items-center mb-6 pb-2 border-b">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
-                Your Career Analysis
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+              className="flex justify-between items-center mb-6 pb-2 border-b"
+            >
+              <h3 className="text-2xl font-bold text-primary">
+                {isStreaming ? "Streaming Analysis..." : "Your Career Analysis"}
               </h3>
+            </motion.div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 rounded-lg border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
-                onClick={copyToClipboard}
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied!" : "Copy"}
-              </Button>
-            </div>
-
-            <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-headings:font-semibold prose-h3:text-lg prose-h2:text-xl prose-h1:text-2xl prose-p:my-3 markdown-content">
+            {/* Performance optimization: Simplified styling */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="prose prose-sm md:prose-base max-w-none dark:prose-invert"
+            >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  h1: ({ node, ...props }) => (
-                    <h1 className="text-2xl font-bold mt-8 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800" {...props} />
-                  ),
-                  h2: ({ node, ...props }) => (
-                    <h2 className="text-xl font-bold mt-6 mb-3 text-primary/90" {...props} />
-                  ),
-                  h3: ({ node, ...props }) => (
-                    <h3 className="text-lg font-semibold mt-5 mb-2 text-primary/80" {...props} />
-                  ),
-                  h4: ({ node, ...props }) => (
-                    <h4 className="text-base font-semibold mt-4 mb-2 text-primary/70" {...props} />
-                  ),
+                  h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-8 mb-4 pb-2 border-b" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-6 mb-3" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-lg font-semibold mt-5 mb-2" {...props} />,
+                  h4: ({ node, ...props }) => <h4 className="text-base font-semibold mt-4 mb-2" {...props} />,
                   a: ({ node, href, ...props }) => (
-                    <a
-                      href={href}
-                      className="text-blue-600 dark:text-blue-400 font-medium underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-300"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      {...props}
-                    />
+                    <a href={href} className="text-blue-600 dark:text-blue-400 underline" target="_blank" rel="noopener noreferrer" {...props} />
                   ),
-                  p: ({ node, ...props }) => (
-                    <p className="my-3 leading-relaxed" {...props} />
-                  ),
-                  ul: ({ node, ...props }) => (
-                    <ul className="list-disc pl-6 my-3 space-y-2" {...props} />
-                  ),
-                  ol: ({ node, ...props }) => (
-                    <ol className="list-decimal pl-6 my-3 space-y-2" {...props} />
-                  ),
-                  li: ({ node, ...props }) => (
-                    <li className="my-1" {...props} />
-                  ),
-                  blockquote: ({ node, ...props }) => (
-                    <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic bg-slate-50 dark:bg-slate-800/50 rounded-r-lg" {...props} />
-                  ),
+                  p: ({ node, ...props }) => <p className="my-3" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc pl-6 my-3" {...props} />,
+                  ol: ({ node, ...props }) => <ol className="list-decimal pl-6 my-3" {...props} />,
+                  li: ({ node, ...props }) => <li className="my-1" {...props} />,
+                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic" {...props} />,
                   table: ({ node, ...props }) => (
-                    <div className="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <table className="border-collapse w-full bg-slate-50 dark:bg-slate-900/50" {...props} />
+                    <div className="overflow-x-auto my-6 border rounded">
+                      <table className="w-full" {...props} />
                     </div>
                   ),
-                  thead: ({ node, ...props }) => (
-                    <thead className="border-b border-slate-200 dark:border-slate-800" {...props} />
-                  ),
-                  tr: ({ node, ...props }) => (
-                    <tr className="border-b border-slate-200 dark:border-slate-800" {...props} />
-                  ),
-                  th: ({ node, ...props }) => (
-                    <th className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3 text-left font-medium" {...props} />
-                  ),
-                  td: ({ node, ...props }) => (
-                    <td className="border-r last:border-r-0 border-slate-200 dark:border-slate-800 px-4 py-3" {...props} />
-                  ),
-                  hr: ({ node, ...props }) => (
-                    <hr className="my-8 border-slate-200 dark:border-slate-800" {...props} />
-                  ),
+                  thead: ({ node, ...props }) => <thead className="border-b" {...props} />,
+                  tr: ({ node, ...props }) => <tr className="border-b" {...props} />,
+                  th: ({ node, ...props }) => <th className="border-r last:border-r-0 px-4 py-3 text-left font-medium" {...props} />,
+                  td: ({ node, ...props }) => <td className="border-r last:border-r-0 px-4 py-3" {...props} />,
+                  hr: ({ node, ...props }) => <hr className="my-8" {...props} />,
                 }}
               >
-                {analysisResult.answer}
+                {analysisResult}
               </ReactMarkdown>
-            </div>
+            </motion.div>
 
-            {analysisResult.error && (
-              <Alert variant="destructive" className="mt-6 rounded-xl">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{analysisResult.error}</AlertDescription>
-              </Alert>
+            {analysisError && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Alert variant="destructive" className="mt-6 rounded-xl">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{analysisError}</AlertDescription>
+                </Alert>
+              </motion.div>
             )}
           </motion.div>
         )}
