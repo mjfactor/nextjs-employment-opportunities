@@ -164,29 +164,49 @@ Analyze the resume in the attached PDF file using this format:
                 ]
             }];
 
-            // Generate AI response with file
-            const result = await generateText({
-                model: model,
-                messages: messages
-            });
+            try {
+                // Generate AI response with file - add timeout handling
+                const result = await Promise.race([
+                    generateText({
+                        model: model,
+                        messages: messages
+                    }),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error('Analysis timeout - request took too long')), 60000)
+                    )
+                ]);
 
-            return {
-                answer: result.text
-            };
+                return {
+                    answer: result.text
+                };
+            } catch (innerError) {
+                console.error('AI generation error with PDF:', innerError);
+                throw new Error(`PDF analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error'}`);
+            }
         } else if (input.text) {
             // Text-based approach for direct text input
-            const result = await generateText({
-                model: model,
-                prompt: `${CAREER_COMPASS_PROMPT}
+            try {
+                const result = await Promise.race([
+                    generateText({
+                        model: model,
+                        prompt: `${CAREER_COMPASS_PROMPT}
 
 RESUME CONTENT TO ANALYZE:
 ${input.text}
 `
-            });
+                    }),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error('Analysis timeout - request took too long')), 60000)
+                    )
+                ]);
 
-            return {
-                answer: result.text
-            };
+                return {
+                    answer: result.text
+                };
+            } catch (innerError) {
+                console.error('AI generation error with text:', innerError);
+                throw new Error(`Text analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error'}`);
+            }
         } else {
             return {
                 answer: '',
@@ -225,11 +245,26 @@ export async function generateAnswerFromFile(formData: FormData): Promise<Career
         }
 
         // Process file
-        const fileBuffer = await file.arrayBuffer();
-        return await generateAnswerCareerCompass({
-            file: fileBuffer,
-            filename: file.name
-        });
+        try {
+            const fileBuffer = await file.arrayBuffer();
+            // Check file size
+            if (fileBuffer.byteLength > 5000000) { // 5MB limit
+                return {
+                    answer: '',
+                    error: 'File size exceeds the 5MB limit'
+                };
+            }
+            return await generateAnswerCareerCompass({
+                file: fileBuffer,
+                filename: file.name
+            });
+        } catch (fileError) {
+            console.error('File processing error:', fileError);
+            return {
+                answer: '',
+                error: `File processing error: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`
+            };
+        }
     } catch (error) {
         console.error('Error processing file for career analysis:', error);
         return {
@@ -250,5 +285,11 @@ export async function generateAnswerFromText(text: string): Promise<CareerCompas
         };
     }
 
-    return await generateAnswerCareerCompass({ text });
+    // Limit text size to prevent issues
+    const trimmedText = text.trim().substring(0, 20000); // Limit to 20K characters
+    if (trimmedText.length < text.trim().length) {
+        console.warn('Text was truncated to 20,000 characters for analysis');
+    }
+
+    return await generateAnswerCareerCompass({ text: trimmedText });
 }
