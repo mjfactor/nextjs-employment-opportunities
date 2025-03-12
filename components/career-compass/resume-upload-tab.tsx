@@ -240,11 +240,11 @@ export default function ResumeUploadTab() {
         const formData = new FormData();
         formData.append('file', file);
 
-        // Add a timeout for the request
+        // Add a timeout for the request - extended for Vercel deployment
         result = await Promise.race([
           generateAnswerFromFile(formData),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out after 120 seconds')), 120000)
+            setTimeout(() => reject(new Error('Request timed out after 60 seconds. This may be due to serverless function limitations.')), 60000)
           )
         ]);
       } else if (resumeContent) {
@@ -253,7 +253,7 @@ export default function ResumeUploadTab() {
         result = await Promise.race([
           generateAnswerFromText(resumeContent),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out after 120 seconds')), 120000)
+            setTimeout(() => reject(new Error('Request timed out after 60 seconds. This may be due to serverless function limitations.')), 60000)
           )
         ]);
       } else {
@@ -273,7 +273,8 @@ export default function ResumeUploadTab() {
       setAnalysisResult({
         answer: '',
         error: error instanceof Error
-          ? `Analysis failed: ${error.message}`
+          ? `Analysis failed: ${error.message}${error.message.includes('timed out') ?
+            '\n\nTip: Try again or use a smaller file. Vercel has strict serverless function limits.' : ''}`
           : 'An unexpected error occurred during analysis. Please try again.'
       });
     } finally {
@@ -590,9 +591,9 @@ export default function ResumeUploadTab() {
                   {analysisResult.answer}
                 </ReactMarkdown>
               </div>
-        ) : null}
+            ) : null}
 
-        {analysisResult.error && (
+            {analysisResult.error && (
               <Alert variant="destructive" className="mt-2 rounded-xl">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="font-medium">

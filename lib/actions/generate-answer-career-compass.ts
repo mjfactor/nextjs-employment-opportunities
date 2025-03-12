@@ -172,9 +172,14 @@ Analyze the resume in the attached PDF file using this format:
                         messages: messages
                     }),
                     new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error('Analysis timeout - request took too long')), 60000)
+                        setTimeout(() => reject(new Error('Analysis timeout - server response took too long (60s limit)')), 50000)
                     )
                 ]);
+
+                // Check if result is valid
+                if (!result || !result.text) {
+                    throw new Error('Empty response from AI service');
+                }
 
                 return {
                     answer: result.text
@@ -186,19 +191,29 @@ Analyze the resume in the attached PDF file using this format:
         } else if (input.text) {
             // Text-based approach for direct text input
             try {
+                // Consider truncating very long text to avoid API timeouts
+                const truncatedText = input.text.length > 15000 ?
+                    input.text.substring(0, 15000) + "... (content truncated for processing)" :
+                    input.text;
+
                 const result = await Promise.race([
                     generateText({
                         model: model,
                         prompt: `${CAREER_COMPASS_PROMPT}
 
 RESUME CONTENT TO ANALYZE:
-${input.text}
+${truncatedText}
 `
                     }),
                     new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error('Analysis timeout - request took too long')), 60000)
+                        setTimeout(() => reject(new Error('Analysis timeout - server response took too long (60s limit)')), 50000)
                     )
                 ]);
+
+                // Check if result is valid
+                if (!result || !result.text) {
+                    throw new Error('Empty response from AI service');
+                }
 
                 return {
                     answer: result.text
@@ -217,7 +232,7 @@ ${input.text}
         console.error('Error generating career compass answer:', error);
         return {
             answer: '',
-            error: error instanceof Error ? error.message : 'Failed to generate career compass answer'
+            error: `AI processing error: ${error instanceof Error ? error.message : 'Failed to generate career compass answer'}`
         };
     }
 }
