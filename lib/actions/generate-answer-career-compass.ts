@@ -165,20 +165,34 @@ Analyze the resume in the attached PDF file using this format:
             }];
 
             try {
-                // Generate AI response with file - add timeout handling
+                // Generate AI response with file - use more robust error handling for Vercel environment
                 const result = await Promise.race([
                     generateText({
                         model: model,
-                        messages: messages
+                        messages: messages,
+                        temperature: 0.7, // Adding temperature parameter for more consistent results
+                        maxTokens: 4000, // Control response length
+                    }).catch(err => {
+                        console.error('AI SDK error details:', err);
+                        throw new Error(`AI service error: ${err.message || 'Unknown error'}`);
                     }),
                     new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error('Analysis timeout - server response took too long (60s limit)')), 50000)
+                        setTimeout(() => reject(new Error('Response timeout after 50 seconds')), 50000)
                     )
                 ]);
 
-                // Check if result is valid
-                if (!result || !result.text) {
-                    throw new Error('Empty response from AI service');
+                // More robust result validation
+                if (!result) {
+                    throw new Error('Empty response received from AI service');
+                }
+
+                if (typeof result !== 'object' || !('text' in result) || typeof result.text !== 'string') {
+                    console.error('Unexpected response structure:', result);
+                    throw new Error('Invalid response format from AI service');
+                }
+
+                if (!result.text || result.text.trim() === '') {
+                    throw new Error('AI returned empty text response');
                 }
 
                 return {
@@ -186,7 +200,10 @@ Analyze the resume in the attached PDF file using this format:
                 };
             } catch (innerError) {
                 console.error('AI generation error with PDF:', innerError);
-                throw new Error(`PDF analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error'}`);
+                return {
+                    answer: '',
+                    error: `PDF analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error processing PDF'}`
+                };
             }
         } else if (input.text) {
             // Text-based approach for direct text input
@@ -203,16 +220,21 @@ Analyze the resume in the attached PDF file using this format:
 
 RESUME CONTENT TO ANALYZE:
 ${truncatedText}
-`
+`,
+                        temperature: 0.7, // Adding temperature parameter
+                        maxTokens: 4000, // Control response length
+                    }).catch(err => {
+                        console.error('AI SDK text processing error:', err);
+                        throw new Error(`AI text processing error: ${err.message || 'Unknown error'}`);
                     }),
                     new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error('Analysis timeout - server response took too long (60s limit)')), 50000)
+                        setTimeout(() => reject(new Error('Response timeout after 50 seconds')), 50000)
                     )
                 ]);
 
-                // Check if result is valid
-                if (!result || !result.text) {
-                    throw new Error('Empty response from AI service');
+                // More robust validation
+                if (!result || !result.text || result.text.trim() === '') {
+                    throw new Error('Empty or invalid response from AI service');
                 }
 
                 return {
@@ -220,7 +242,10 @@ ${truncatedText}
                 };
             } catch (innerError) {
                 console.error('AI generation error with text:', innerError);
-                throw new Error(`Text analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error'}`);
+                return {
+                    answer: '',
+                    error: `Text analysis failed: ${innerError instanceof Error ? innerError.message : 'Unknown error processing text'}`
+                };
             }
         } else {
             return {
