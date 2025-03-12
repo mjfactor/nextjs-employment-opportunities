@@ -17,7 +17,7 @@ import { generateAnswerFromFile, generateAnswerFromText } from "@/lib/actions/ge
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import "@/styles/markdown-optimizations.css" // Re-add the CSS import
-
+export const maxDuration = 60;
 export default function ResumeUploadTab() {
   const [file, setFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)

@@ -2,7 +2,6 @@
 
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
-
 // Type definitions
 type CareerCompassInput = {
     text?: string,
