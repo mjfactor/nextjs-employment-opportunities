@@ -268,31 +268,9 @@ export default function ResumeUploadTab() {
   return (
     <div className="space-y-8 relative">
       <div className="flex flex-col gap-4">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Unlock Your Career Potential</h2>
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Career Compass</h2>
         <p className="text-muted-foreground text-lg">Upload your resume and let our AI analyze your skills, experience, and potential. Get personalized insights to accelerate your career journey.</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-sm">AI-powered skill assessment</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <Upload className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-sm">Smart document parsing</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-sm">Detailed career recommendations</p>
-          </div>
-        </div>
+        <p className="text-muted-foreground">Our system uses a sophisticated <span className="font-medium text-primary">Random Forest model</span> to identify key qualifications and skills from your resume, combined with a state-of-the-art <span className="font-medium text-primary">Large Language Model (LLM)</span> to provide detailed career insights and recommendations tailored specifically to your professional background.</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -453,6 +431,25 @@ export default function ResumeUploadTab() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Note about analyze button visibility */}
+      <AnimatePresence>
+        {file && isValidResume === null && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert className="border-blue-300 rounded-xl bg-blue-50 dark:bg-blue-900/20 shadow-sm">
+              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                The analyze button will only appear once your document is validated as a resume.
+              </AlertDescription>
+            </Alert>
           </motion.div>
         )}
       </AnimatePresence>
