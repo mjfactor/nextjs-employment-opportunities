@@ -1,10 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Upload, FileText, AlertCircle, CheckCircle, Eye, X } from "lucide-react"
+import { Upload, FileText, AlertCircle, CheckCircle, Eye, X, StopCircle, AlertTriangle, ArrowDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
@@ -17,7 +17,17 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import "@/styles/markdown-optimizations.css"
 
-export default function ResumeUploadTab() {
+// Import dialog components for modern confirmation dialogs
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
   const [file, setFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -33,10 +43,36 @@ export default function ResumeUploadTab() {
 
   // Ref to track if component is mounted
   const isMounted = useRef(true);
+  // Ref for abort controller to cancel fetch requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Expose analyzing state and stopAnalysis function through ref
+  useImperativeHandle(ref, () => ({
+    isAnalyzing,
+    isStreaming,
+    stopAnalysis: () => stopAnalysis()
+  }));
+
+  // State for managing confirmation dialogs
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    action: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    action: () => { },
+  });
 
   useEffect(() => {
     return () => {
       isMounted.current = false;
+      // Cancel any in-progress fetch when unmounting
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     }
   }, []);
 
@@ -169,11 +205,29 @@ export default function ResumeUploadTab() {
   }
 
   const removeFile = () => {
-    setFile(null)
-    setFilePreview(null)
-    setIsValidResume(null)
-    setUploadStage("idle")
-    setUploadProgress(0)
+    // Check if analysis is in progress and confirm before removing
+    if (isAnalyzing || isStreaming) {
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Stop Analysis?",
+        description: "Removing the file will stop the current analysis. This action cannot be undone.",
+        action: () => {
+          stopAnalysis();
+          setFile(null);
+          setFilePreview(null);
+          setIsValidResume(null);
+          setUploadStage("idle");
+          setUploadProgress(0);
+        }
+      });
+      return;
+    }
+
+    setFile(null);
+    setFilePreview(null);
+    setIsValidResume(null);
+    setUploadStage("idle");
+    setUploadProgress(0);
   }
 
   // Get upload stage text
@@ -190,6 +244,43 @@ export default function ResumeUploadTab() {
     }
   }
 
+  // Function to stop analysis with confirmation
+  const stopAnalysis = (showConfirmation = false) => {
+    if (showConfirmation) {
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Stop Analysis?",
+        description: "This will immediately stop the current analysis process. Any partial results will remain visible.",
+        action: () => {
+          // Actual stop logic
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+          }
+
+          if (isMounted.current) {
+            setIsAnalyzing(false);
+            setIsStreaming(false);
+          }
+        }
+      });
+      return false;
+    }
+
+    // If not showing confirmation, just stop the analysis
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    if (isMounted.current) {
+      setIsAnalyzing(false);
+      setIsStreaming(false);
+    }
+
+    return true;
+  }
+
   // Handle resume submission for analysis with streaming
   const submitResume = async () => {
     if (!file && !resumeContent || !isValidResume) {
@@ -201,6 +292,10 @@ export default function ResumeUploadTab() {
       setIsStreaming(true);
       setAnalysisResult("");
       setAnalysisError(null);
+
+      // Create an AbortController for this request
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
 
       // Create form data for the API request
       const formData = new FormData();
@@ -215,10 +310,11 @@ export default function ResumeUploadTab() {
         throw new Error("No valid content available for analysis");
       }
 
-      // Make the API call with streaming response
+      // Make the API call with streaming response and abort signal
       const response = await fetch('/api/career-compass', {
         method: 'POST',
         body: formData,
+        signal, // Pass the abort signal
       });
 
       if (!response.ok) {
@@ -254,14 +350,34 @@ export default function ResumeUploadTab() {
         if (done) break;
       }
 
-    } catch (error) {
-      console.error("Error analyzing resume:", error);
-      setAnalysisError(error instanceof Error ? error.message : 'An error occurred during analysis');
+    } catch (error: unknown) {
+      // Check if this was an abort error (user cancelled)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Analysis was cancelled by the user');
+      } else {
+        console.error("Error analyzing resume:", error);
+        setAnalysisError(error instanceof Error ? error.message : 'An error occurred during analysis');
+      }
     } finally {
       if (isMounted.current) {
         setIsAnalyzing(false);
         setIsStreaming(false);
       }
+      // Clear the abort controller reference
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Add a reference to the analysis results container
+  const analysisContainerRef = useRef<HTMLDivElement>(null);
+
+  // Function to scroll to the bottom of the analysis
+  const scrollToBottom = () => {
+    if (analysisContainerRef.current) {
+      analysisContainerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end"
+      });
     }
   };
 
@@ -454,7 +570,30 @@ export default function ResumeUploadTab() {
         )}
       </AnimatePresence>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        {/* Stop Analysis Button */}
+        <AnimatePresence>
+          {(isAnalyzing || isStreaming) && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                variant="destructive"
+                className="mt-2 px-6 py-6 h-auto rounded-xl font-medium text-base"
+                onClick={() => stopAnalysis(true)}
+              >
+                <div className="flex items-center gap-2">
+                  <StopCircle className="h-5 w-5" />
+                  Stop Analysis
+                </div>
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{
@@ -496,6 +635,7 @@ export default function ResumeUploadTab() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
             className="mt-10 border rounded-xl p-8 bg-card shadow-md"
+            ref={analysisContainerRef}
           >
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -561,6 +701,65 @@ export default function ResumeUploadTab() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Scroll to bottom button - only shows during analysis */}
+      <AnimatePresence>
+        {isAnalyzing && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            onClick={scrollToBottom}
+            className="fixed bottom-8 right-8 p-4 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
+            aria-label="Scroll to bottom of analysis"
+          >
+            <ArrowDown className="h-5 w-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Modern confirmation dialog */}
+      <Dialog
+        open={confirmationDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] rounded-xl p-6 border-none shadow-xl bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              {confirmationDialog.title}
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2 opacity-80">
+              {confirmationDialog.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+              className="w-full sm:w-auto rounded-lg border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                confirmationDialog.action();
+                setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+              }}
+              className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-}
+});
+
+export default ResumeUploadTab;

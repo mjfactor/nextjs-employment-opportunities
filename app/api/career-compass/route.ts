@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
                 },
             });
         }
-        // Handle text input
+        // Handle text input (manually entered details or extracted from DOCX)
         else if (text) {
             // Generate streaming response with text input
             const response = streamText({
