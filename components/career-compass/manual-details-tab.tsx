@@ -457,14 +457,14 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <h2 className="text-2xl font-semibold mb-6">Enter Your Details Manually</h2>
+        <h2 className="text-xl font-semibold mb-3">Enter Your Details Manually</h2>
 
-        <div className="space-y-6">
-          <div className="space-y-2" data-error={!!errors.courseInfo && isFieldTouched("courseInfo")}>
+        <div className="space-y-4">
+          <div className="space-y-1.5" data-error={!!errors.courseInfo && isFieldTouched("courseInfo")}>
             <div className="flex justify-between items-center">
-              <Label htmlFor="course-info" className="flex items-center gap-1">
+              <Label htmlFor="course-info" className="flex items-center gap-1 text-sm">
                 Course Information
                 <span className="text-red-500">*</span>
               </Label>
@@ -481,13 +481,13 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
               value={courseInfo}
               onChange={(e) => setCourseInfo(e.target.value)}
               onBlur={() => markFieldAsTouched("courseInfo")}
-              className={`min-h-[100px] ${errors.courseInfo && isFieldTouched("courseInfo") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+              className={`min-h-[80px] text-sm ${errors.courseInfo && isFieldTouched("courseInfo") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             />
           </div>
 
-          <div className="space-y-2" data-error={!!errors.skills && isFieldTouched("skills")}>
+          <div className="space-y-1.5" data-error={!!errors.skills && isFieldTouched("skills")}>
             <div className="flex justify-between items-center">
-              <Label htmlFor="skills" className="flex items-center gap-1">
+              <Label htmlFor="skills" className="flex items-center gap-1 text-sm">
                 Skills
                 <span className="text-red-500">*</span>
               </Label>
@@ -504,26 +504,26 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
               onBlur={() => markFieldAsTouched("skills")}
-              className={`min-h-[100px] ${errors.skills && isFieldTouched("skills") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+              className={`min-h-[80px] text-sm ${errors.skills && isFieldTouched("skills") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             />
           </div>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="my-3" />
 
       {/* Job Experience Toggle */}
-      <div className="flex items-center space-x-4 py-4">
+      <div className="flex items-center space-x-4 py-2">
         <Card className="w-full">
-          <CardContent className="p-6">
+          <CardContent className="p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <Briefcase className="h-5 w-5 text-primary" />
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 rounded-full bg-primary/10">
+                  <Briefcase className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium">Work Experience</h3>
-                  <p className="text-sm text-muted-foreground">Do you have any work experience to add?</p>
+                  <h3 className="text-base font-medium">Work Experience</h3>
+                  <p className="text-xs text-muted-foreground">Do you have any work experience to add?</p>
                 </div>
               </div>
               <Switch
@@ -544,66 +544,66 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="space-y-6"
+            className="space-y-4"
           >
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">Job Experience</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">Job Experience</h3>
                 <Button
                   type="button"
                   onClick={addJobExperience}
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-xs h-7"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                   Add Job Experience
                 </Button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {jobExperiences.map((job, index) => {
                   const jobErrors = errors.jobExperiences[job.id] || {}
 
                   return (
-                    <Card key={job.id}>
-                      <CardHeader className="pb-3">
+                    <Card key={job.id} className="overflow-hidden">
+                      <CardHeader className="p-3 pb-2">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">Job Experience {index + 1}</CardTitle>
+                          <CardTitle className="text-base">Job Experience {index + 1}</CardTitle>
                           {jobExperiences.length > 1 && (
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => removeJobExperience(job.id)}
-                              className="h-8 w-8 p-0 text-destructive"
+                              className="h-6 w-6 p-0 text-destructive"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5" />
                               <span className="sr-only">Remove</span>
                             </Button>
                           )}
                         </div>
-                        <CardDescription>
+                        <CardDescription className="text-xs">
                           Enter the details of your work experience
                           <span className="text-red-500 ml-1">*</span>
                         </CardDescription>
 
                         {jobErrors.dateRange && (
-                          <Alert variant="destructive" className="mt-2 py-2">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{jobErrors.dateRange}</AlertDescription>
+                          <Alert variant="destructive" className="mt-1.5 py-1.5 text-xs">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            <AlertDescription className="text-xs">{jobErrors.dateRange}</AlertDescription>
                           </Alert>
                         )}
                       </CardHeader>
 
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CardContent className="p-3 pt-0 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div
-                            className="space-y-2"
+                            className="space-y-1"
                             data-error={!!jobErrors.title && isFieldTouched("jobExperiences", job.id, "title")}
                           >
                             <div className="flex justify-between items-center">
-                              <Label htmlFor={`job-title-${job.id}`} className="flex items-center gap-1">
+                              <Label htmlFor={`job-title-${job.id}`} className="flex items-center gap-1 text-xs">
                                 Job Title
                                 <span className="text-red-500">*</span>
                               </Label>
@@ -620,20 +620,19 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                               value={job.title}
                               onChange={(e) => updateJobExperience(job.id, "title", e.target.value)}
                               onBlur={() => markFieldAsTouched("jobExperiences", job.id, "title")}
-                              className={
-                                jobErrors.title && isFieldTouched("jobExperiences", job.id, "title")
+                              className={`h-8 text-sm ${jobErrors.title && isFieldTouched("jobExperiences", job.id, "title")
                                   ? "border-red-500 focus-visible:ring-red-500"
                                   : ""
-                              }
+                                }`}
                             />
                           </div>
 
                           <div
-                            className="space-y-2"
+                            className="space-y-1"
                             data-error={!!jobErrors.company && isFieldTouched("jobExperiences", job.id, "company")}
                           >
                             <div className="flex justify-between items-center">
-                              <Label htmlFor={`company-${job.id}`} className="flex items-center gap-1">
+                              <Label htmlFor={`company-${job.id}`} className="flex items-center gap-1 text-xs">
                                 Company
                                 <span className="text-red-500">*</span>
                               </Label>
@@ -650,22 +649,21 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                               value={job.company}
                               onChange={(e) => updateJobExperience(job.id, "company", e.target.value)}
                               onBlur={() => markFieldAsTouched("jobExperiences", job.id, "company")}
-                              className={
-                                jobErrors.company && isFieldTouched("jobExperiences", job.id, "company")
+                              className={`h-8 text-sm ${jobErrors.company && isFieldTouched("jobExperiences", job.id, "company")
                                   ? "border-red-500 focus-visible:ring-red-500"
                                   : ""
-                              }
+                                }`}
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div
-                            className="space-y-2"
+                            className="space-y-1"
                             data-error={!!jobErrors.startDate && isFieldTouched("jobExperiences", job.id, "startDate")}
                           >
                             <div className="flex justify-between items-center">
-                              <Label htmlFor={`start-date-${job.id}`} className="flex items-center gap-1">
+                              <Label htmlFor={`start-date-${job.id}`} className="flex items-center gap-1 text-xs">
                                 Start Date
                                 <span className="text-red-500">*</span>
                               </Label>
@@ -682,20 +680,19 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                               value={job.startDate}
                               onChange={(e) => updateJobExperience(job.id, "startDate", e.target.value)}
                               onBlur={() => markFieldAsTouched("jobExperiences", job.id, "startDate")}
-                              className={
-                                jobErrors.startDate && isFieldTouched("jobExperiences", job.id, "startDate")
+                              className={`h-8 text-sm ${jobErrors.startDate && isFieldTouched("jobExperiences", job.id, "startDate")
                                   ? "border-red-500 focus-visible:ring-red-500"
                                   : ""
-                              }
+                                }`}
                             />
                           </div>
 
                           <div
-                            className="space-y-2"
+                            className="space-y-1"
                             data-error={!!jobErrors.endDate && isFieldTouched("jobExperiences", job.id, "endDate")}
                           >
                             <div className="flex justify-between items-center">
-                              <Label htmlFor={`end-date-${job.id}`} className="flex items-center gap-1">
+                              <Label htmlFor={`end-date-${job.id}`} className="flex items-center gap-1 text-xs">
                                 End Date
                                 <span className="text-red-500">*</span>
                               </Label>
@@ -712,21 +709,20 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                               value={job.endDate}
                               onChange={(e) => updateJobExperience(job.id, "endDate", e.target.value)}
                               onBlur={() => markFieldAsTouched("jobExperiences", job.id, "endDate")}
-                              className={
-                                jobErrors.endDate && isFieldTouched("jobExperiences", job.id, "endDate")
+                              className={`h-8 text-sm ${jobErrors.endDate && isFieldTouched("jobExperiences", job.id, "endDate")
                                   ? "border-red-500 focus-visible:ring-red-500"
                                   : ""
-                              }
+                                }`}
                             />
                           </div>
                         </div>
 
                         <div
-                          className="space-y-2"
+                          className="space-y-1"
                           data-error={!!jobErrors.description && isFieldTouched("jobExperiences", job.id, "description")}
                         >
                           <div className="flex justify-between items-center">
-                            <Label htmlFor={`description-${job.id}`} className="flex items-center gap-1">
+                            <Label htmlFor={`description-${job.id}`} className="flex items-center gap-1 text-xs">
                               Job Description
                               <span className="text-red-500">*</span>
                             </Label>
@@ -743,7 +739,7 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                             value={job.description}
                             onChange={(e) => updateJobExperience(job.id, "description", e.target.value)}
                             onBlur={() => markFieldAsTouched("jobExperiences", job.id, "description")}
-                            className={`min-h-[100px] ${jobErrors.description && isFieldTouched("jobExperiences", job.id, "description") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            className={`min-h-[60px] text-sm ${jobErrors.description && isFieldTouched("jobExperiences", job.id, "description") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                           />
                         </div>
                       </CardContent>
@@ -756,7 +752,7 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <AnimatePresence>
           {!formValid &&
             Object.keys(errors).some(
@@ -771,25 +767,26 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="py-2 text-sm">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>Please fill in all required fields marked with an asterisk (*).</AlertDescription>
+                  <AlertDescription className="text-xs">Please fill in all required fields marked with an asterisk (*).</AlertDescription>
                 </Alert>
               </motion.div>
             )}
         </AnimatePresence>
 
-        <div className="flex justify-end"></div>
-        <Button type="submit" className="mt-4" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <span className="mr-2">{isStreaming ? "Analyzing..." : "Submitting..."}</span>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            </>
-          ) : (
-            "Submit Details"
-          )}
-        </Button>
+        <div className="flex justify-end">
+          <Button type="submit" size="sm" className="rounded-lg" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <span className="mr-2">{isStreaming ? "Analyzing..." : "Submitting..."}</span>
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              </>
+            ) : (
+              "Submit Details"
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Analysis Results Section - Display when streaming or has content */}
@@ -800,16 +797,16 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="mt-10 border rounded-xl p-8 bg-card shadow-md"
+            className="mt-6 border rounded-lg p-4 bg-card shadow-md"
             ref={analysisContainerRef}
           >
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
-              className="flex justify-between items-center mb-6 pb-2 border-b"
+              className="flex justify-between items-center mb-3 pb-2 border-b"
             >
-              <h3 className="text-2xl font-bold text-primary">
+              <h3 className="text-xl font-bold text-primary">
                 {isStreaming ? "Streaming Analysis..." : "Your Career Analysis"}
               </h3>
             </motion.div>
@@ -819,33 +816,33 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.4 }}
-              className="prose prose-sm md:prose-base max-w-none dark:prose-invert"
+              className="prose prose-sm max-w-none dark:prose-invert"
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-8 mb-4 pb-2 border-b" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-6 mb-3" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-lg font-semibold mt-5 mb-2" {...props} />,
-                  h4: ({ node, ...props }) => <h4 className="text-base font-semibold mt-4 mb-2" {...props} />,
+                  h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-6 mb-3 pb-1 border-b" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-4 mb-2" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-base font-semibold mt-3 mb-2" {...props} />,
+                  h4: ({ node, ...props }) => <h4 className="text-sm font-semibold mt-3 mb-1" {...props} />,
                   a: ({ node, href, ...props }) => (
                     <a href={href} className="text-blue-600 dark:text-blue-400 underline" target="_blank" rel="noopener noreferrer" {...props} />
                   ),
-                  p: ({ node, ...props }) => <p className="my-3" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="list-disc pl-6 my-3" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal pl-6 my-3" {...props} />,
-                  li: ({ node, ...props }) => <li className="my-1" {...props} />,
-                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic" {...props} />,
+                  p: ({ node, ...props }) => <p className="my-2 text-sm" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
+                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
+                  li: ({ node, ...props }) => <li className="my-1 text-sm" {...props} />,
+                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/30 pl-3 py-1 my-3 italic text-sm" {...props} />,
                   table: ({ node, ...props }) => (
-                    <div className="overflow-x-auto my-6 border rounded">
-                      <table className="w-full" {...props} />
+                    <div className="overflow-x-auto my-4 border rounded">
+                      <table className="w-full text-sm" {...props} />
                     </div>
                   ),
                   thead: ({ node, ...props }) => <thead className="border-b" {...props} />,
                   tr: ({ node, ...props }) => <tr className="border-b" {...props} />,
-                  th: ({ node, ...props }) => <th className="border-r last:border-r-0 px-4 py-3 text-left font-medium" {...props} />,
-                  td: ({ node, ...props }) => <td className="border-r last:border-r-0 px-4 py-3" {...props} />,
-                  hr: ({ node, ...props }) => <hr className="my-8" {...props} />,
+                  th: ({ node, ...props }) => <th className="border-r last:border-r-0 px-3 py-2 text-left font-medium" {...props} />,
+                  td: ({ node, ...props }) => <td className="border-r last:border-r-0 px-3 py-2" {...props} />,
+                  hr: ({ node, ...props }) => <hr className="my-4" {...props} />,
                 }}
               >
                 {analysisResult}
@@ -858,9 +855,9 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                <Alert variant="destructive" className="mt-6 rounded-xl">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{analysisError}</AlertDescription>
+                <Alert variant="destructive" className="mt-4 rounded-lg py-2">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <AlertDescription className="text-xs">{analysisError}</AlertDescription>
                 </Alert>
               </motion.div>
             )}
@@ -877,10 +874,10 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
             onClick={scrollToBottom}
-            className="fixed bottom-8 right-8 p-4 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
+            className="fixed bottom-6 right-6 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
             aria-label="Scroll to bottom of analysis"
           >
-            <ArrowDown className="h-5 w-5" />
+            <ArrowDown className="h-4 w-4" />
           </motion.button>
         )}
       </AnimatePresence>

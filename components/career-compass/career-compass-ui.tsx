@@ -66,7 +66,7 @@ export default function CareerAnalysis() {
     }
 
     return (
-        <div className="space-y-6 w-full max-w-[95rem] mx-auto">
+        <div className="space-y-6 w-full max-w-[70rem] mx-auto">
             <Tabs value={activeTab} className="w-full" onValueChange={handleTabChange}>
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                     <TabsTrigger value="resume-upload">Resume Upload</TabsTrigger>
