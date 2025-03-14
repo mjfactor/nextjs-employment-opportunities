@@ -73,7 +73,7 @@ export default function CareerAnalysis() {
                     <TabsTrigger value="manual-details">Manual Details</TabsTrigger>
                 </TabsList>
 
-                <Card className="w-full">
+                <Card className="w-full border-none">
                     <CardContent className="pt-6">
                         {/* Always render both components but control visibility with CSS */}
                         <div style={{ display: activeTab === "resume-upload" ? 'block' : 'none' }}>
@@ -103,7 +103,7 @@ export default function CareerAnalysis() {
                             Switching tabs will immediately stop the current analysis process. Any partial results will remain visible. Are you sure you want to continue?
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
+                    <DialogFooter className="gap-4 sm:gap-4">
                         <Button variant="outline" onClick={() => setConfirmDialog({ isOpen: false, targetTab: "" })}>
                             Cancel
                         </Button>

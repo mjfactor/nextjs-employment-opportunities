@@ -737,7 +737,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+          <DialogFooter className="mt-4 gap-4 sm:gap-4">
             <Button
               variant="outline"
               onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
