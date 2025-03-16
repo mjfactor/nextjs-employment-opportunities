@@ -15,7 +15,6 @@ import { validateResumeFile, validateResumeText } from "@/lib/actions/resume-val
 // Import markdown renderer
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import "@/styles/markdown-optimizations.css"
 
 // Import dialog components for modern confirmation dialogs
 import {

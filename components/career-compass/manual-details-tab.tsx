@@ -15,7 +15,7 @@ import { toast } from "sonner"
 // Import markdown renderer
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import "@/styles/markdown-optimizations.css"
+
 import { Switch } from "@/components/ui/switch"
 
 interface JobExperience {
