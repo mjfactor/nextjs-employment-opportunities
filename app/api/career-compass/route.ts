@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { smoothStream, streamText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { NextRequest } from 'next/server';
 
@@ -159,7 +159,8 @@ export async function POST(request: NextRequest) {
             // Generate streaming response with file input
             const response = streamText({
                 model,
-                messages
+                messages,
+                experimental_transform: smoothStream()
             });
 
             // Return the streaming response
@@ -176,7 +177,8 @@ export async function POST(request: NextRequest) {
             // Generate streaming response with text input
             const response = streamText({
                 model,
-                prompt: `${CAREER_COMPASS_PROMPT}\n\nRESUME CONTENT TO ANALYZE:\n${text}`
+                prompt: `${CAREER_COMPASS_PROMPT}\n\nRESUME CONTENT TO ANALYZE:\n${text}`,
+                experimental_transform: smoothStream()
             });
 
             // Return the streaming response
