@@ -28,7 +28,7 @@ export default async function Page() {
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <ModeToggle />
-            <Separator orientation="vertical" className="mr-2 h-4" />
+            
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">

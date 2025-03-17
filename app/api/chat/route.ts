@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 import { streamText } from 'ai';
 

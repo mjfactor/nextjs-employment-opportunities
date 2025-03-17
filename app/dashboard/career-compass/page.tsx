@@ -13,6 +13,7 @@ import { auth } from "@/auth"
 import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
 import CareerAnalysis from "@/components/career-compass/career-compass-ui"
 
+
 export default async function Page() {
   const session = await auth()
   if (!session) {
@@ -27,7 +28,7 @@ export default async function Page() {
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <ModeToggle />
-            <Separator orientation="vertical" className="mr-2 h-4" />
+
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
@@ -42,7 +43,7 @@ export default async function Page() {
           </div>
         </header>
 
-        <main className="p-6">
+        <main className="p-7">
           <CareerAnalysis />
         </main>
       </SidebarInset>
