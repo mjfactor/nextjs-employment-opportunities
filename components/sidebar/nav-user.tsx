@@ -1,6 +1,7 @@
 "use client"
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-react"
+import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Loader2, Sparkles } from "lucide-react"
 import { signOut } from "next-auth/react"
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   return (
     <SidebarMenu>
@@ -66,15 +68,26 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              disabled={isLoggingOut}
               onSelect={(e) => {
                 e.preventDefault();
+                setIsLoggingOut(true);
                 signOut({
                   callbackUrl: '/'
                 });
               }}
             >
-              <LogOut />
-              Log out
+              {isLoggingOut ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </>
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
