@@ -39,6 +39,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
   const [analysisResult, setAnalysisResult] = useState<string>("")
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false);
+  const [fileSizeError, setFileSizeError] = useState<boolean>(false)
 
   // Ref to track if component is mounted
   const isMounted = useRef(true);
@@ -196,11 +197,22 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
   }
 
   const handleFileSelection = (selectedFile: File) => {
-    setFile(selectedFile)
-    setIsValidResume(null)
+    // Check if file exceeds 4MB
+    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB in bytes
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setFileSizeError(true);
+      setFile(null);
+      setIsValidResume(null);
+      return;
+    }
+
+    setFileSizeError(false);
+    setFile(selectedFile);
+    setIsValidResume(null);
 
     // Remove text file preview logic since we no longer accept txt files
-    setFilePreview(null)
+    setFilePreview(null);
   }
 
   const removeFile = () => {
@@ -217,6 +229,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
           setIsValidResume(null);
           setUploadStage("idle");
           setUploadProgress(0);
+          setFileSizeError(false);
         }
       });
       return;
@@ -227,6 +240,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     setIsValidResume(null);
     setUploadStage("idle");
     setUploadProgress(0);
+    setFileSizeError(false);
   }
 
   // Get upload stage text
@@ -428,7 +442,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
 
               <div>
                 <p className="font-medium text-base">Click to upload or drag and drop</p>
-                <p className="text-xs text-muted-foreground mt-1">PDF or DOCX only (max. 5MB)</p>
+                <p className="text-xs text-muted-foreground mt-1">PDF or DOCX only (max. 4MB)</p>
               </div>
             </div>
           </motion.div>
@@ -546,6 +560,25 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
                 </motion.div>
               )}
             </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* File Size Error UI */}
+      <AnimatePresence>
+        {fileSizeError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert className="border-red-300 rounded-lg bg-red-50 dark:bg-red-900/20 shadow-sm py-2">
+              <AlertCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+              <AlertDescription className="text-red-800 dark:text-red-200 text-xs">
+                Your file exceeds the maximum size limit of 4MB. Please upload a smaller file or try compressing it.
+              </AlertDescription>
+            </Alert>
           </motion.div>
         )}
       </AnimatePresence>
@@ -698,70 +731,70 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
                   <AlertDescription className="text-xs">{analysisError}</AlertDescription>
                 </Alert>
               </motion.div>
-            )}
-          </motion.div>
         )}
-      </AnimatePresence>
-
-      {/* Scroll to bottom button - only shows during analysis */}
-      <AnimatePresence>
-        {isAnalyzing && (
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.2 }}
-            onClick={scrollToBottom}
-            className="fixed bottom-6 right-6 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
-            aria-label="Scroll to bottom of analysis"
-          >
-            <ArrowDown className="h-4 w-4" />
-          </motion.button>
+      </motion.div>
         )}
-      </AnimatePresence>
+    </AnimatePresence>
 
-      {/* Modern confirmation dialog */}
-      <Dialog
-        open={confirmationDialog.isOpen}
-        onOpenChange={(open) => {
-          if (!open) setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
-        }}
+      {/* Scroll to bottom button - only shows during analysis */ }
+  <AnimatePresence>
+    {isAnalyzing && (
+      <motion.button
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.2 }}
+        onClick={scrollToBottom}
+        className="fixed bottom-6 right-6 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
+        aria-label="Scroll to bottom of analysis"
       >
-        <DialogContent className="sm:max-w-[400px] rounded-lg p-4 border-none shadow-xl bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
-          <DialogHeader className="space-y-1">
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-              {confirmationDialog.title}
-            </DialogTitle>
-            <DialogDescription className="text-sm pt-1 opacity-80">
-              {confirmationDialog.description}
-            </DialogDescription>
-          </DialogHeader>
+        <ArrowDown className="h-4 w-4" />
+      </motion.button>
+    )}
+  </AnimatePresence>
 
-          <DialogFooter className="mt-3 gap-2 sm:gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
-              className="w-full sm:w-auto rounded-lg border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                confirmationDialog.action();
-                setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
-              }}
-              className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+  {/* Modern confirmation dialog */ }
+  <Dialog
+    open={confirmationDialog.isOpen}
+    onOpenChange={(open) => {
+      if (!open) setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+    }}
+  >
+    <DialogContent className="sm:max-w-[400px] rounded-lg p-4 border-none shadow-xl bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
+      <DialogHeader className="space-y-1">
+        <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          {confirmationDialog.title}
+        </DialogTitle>
+        <DialogDescription className="text-sm pt-1 opacity-80">
+          {confirmationDialog.description}
+        </DialogDescription>
+      </DialogHeader>
+
+      <DialogFooter className="mt-3 gap-2 sm:gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+          className="w-full sm:w-auto rounded-lg border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => {
+            confirmationDialog.action();
+            setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+          }}
+          className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+        >
+          Confirm
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+    </div >
   )
 });
 
