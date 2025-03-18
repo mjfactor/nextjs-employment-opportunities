@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowRight, Mail, Lock, User, Github, ChromeIcon as Google } from "lucide-react"
+import { ArrowRight, Mail, Lock, User, Github, ChromeIcon as Google, Eye, EyeOff } from "lucide-react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -33,6 +33,8 @@ export default function AuthModal({ mode, children, className }: AuthModalProps)
   const [error, setError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleValidationErrors = (error: unknown) => {
     if (error instanceof Error) {
@@ -209,13 +211,29 @@ export default function AuthModal({ mode, children, className }: AuthModalProps)
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
                     id="password-login"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 bg-zinc-900 border-zinc-700 text-white focus:border-green-500"
+                    className="pl-10 pr-10 bg-zinc-900 border-zinc-700 text-white focus:border-green-500"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-7 w-7 text-zinc-500 hover:text-zinc-300"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showPassword ? "Hide password" : "Show password"}
+                    </span>
+                  </Button>
                 </div>
               </div>
 
@@ -329,13 +347,29 @@ export default function AuthModal({ mode, children, className }: AuthModalProps)
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
                     id="password-signup"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 bg-zinc-900 border-zinc-700 text-white focus:border-green-500"
+                    className="pl-10 pr-10 bg-zinc-900 border-zinc-700 text-white focus:border-green-500"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-7 w-7 text-zinc-500 hover:text-zinc-300"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showPassword ? "Hide password" : "Show password"}
+                    </span>
+                  </Button>
                 </div>
                 {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
               </div>
@@ -348,13 +382,29 @@ export default function AuthModal({ mode, children, className }: AuthModalProps)
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
                     id="confirm-password-signup"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 bg-zinc-900 border-zinc-700 text-white focus:border-green-500"
+                    className="pl-10 pr-10 bg-zinc-900 border-zinc-700 text-white focus:border-green-500"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-7 w-7 text-zinc-500 hover:text-zinc-300"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showConfirmPassword ? "Hide password" : "Show password"}
+                    </span>
+                  </Button>
                 </div>
                 {errors.confirmPassword && <p className="text-sm text-red-500 mt-1">{errors.confirmPassword}</p>}
               </div>
