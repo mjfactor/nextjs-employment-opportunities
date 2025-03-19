@@ -88,6 +88,10 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     }
   }, [file])
 
+  //
+  // FILE UPLOAD AND VALIDATION FUNCTIONS
+  //
+
   // Simulate upload progress
   const simulateUploadProgress = () => {
     let progress = 0;
@@ -170,6 +174,24 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     }
   }
 
+  // Get upload stage text
+  const getStageText = () => {
+    switch (uploadStage) {
+      case "uploading":
+        return "Uploading file..."
+      case "validating":
+        return "Validating resume..."
+      case "complete":
+        return isValidResume ? "Validation complete!" : "Validation failed"
+      default:
+        return ""
+    }
+  }
+
+  //
+  // FILE HANDLING FUNCTIONS
+  //
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -243,19 +265,9 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     setFileSizeError(false);
   }
 
-  // Get upload stage text
-  const getStageText = () => {
-    switch (uploadStage) {
-      case "uploading":
-        return "Uploading file..."
-      case "validating":
-        return "Validating resume..."
-      case "complete":
-        return isValidResume ? "Validation complete!" : "Validation failed"
-      default:
-        return ""
-    }
-  }
+  //
+  // ANALYSIS FUNCTIONS
+  //
 
   // Function to stop analysis with confirmation
   const stopAnalysis = (showConfirmation = false) => {
@@ -731,69 +743,69 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
                   <AlertDescription className="text-xs">{analysisError}</AlertDescription>
                 </Alert>
               </motion.div>
+            )}
+          </motion.div>
         )}
-      </motion.div>
-        )}
-    </AnimatePresence>
+      </AnimatePresence>
 
-      {/* Scroll to bottom button - only shows during analysis */ }
-  <AnimatePresence>
-    {isAnalyzing && (
-      <motion.button
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        transition={{ duration: 0.2 }}
-        onClick={scrollToBottom}
-        className="fixed bottom-6 right-6 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
-        aria-label="Scroll to bottom of analysis"
+      {/* Scroll to bottom button - only shows during analysis */}
+      <AnimatePresence>
+        {isAnalyzing && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            onClick={scrollToBottom}
+            className="fixed bottom-6 right-6 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
+            aria-label="Scroll to bottom of analysis"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Modern confirmation dialog */}
+      <Dialog
+        open={confirmationDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+        }}
       >
-        <ArrowDown className="h-4 w-4" />
-      </motion.button>
-    )}
-  </AnimatePresence>
+        <DialogContent className="sm:max-w-[400px] rounded-lg p-4 border-none shadow-xl bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              {confirmationDialog.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm pt-1 opacity-80">
+              {confirmationDialog.description}
+            </DialogDescription>
+          </DialogHeader>
 
-  {/* Modern confirmation dialog */ }
-  <Dialog
-    open={confirmationDialog.isOpen}
-    onOpenChange={(open) => {
-      if (!open) setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
-    }}
-  >
-    <DialogContent className="sm:max-w-[400px] rounded-lg p-4 border-none shadow-xl bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
-      <DialogHeader className="space-y-1">
-        <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          {confirmationDialog.title}
-        </DialogTitle>
-        <DialogDescription className="text-sm pt-1 opacity-80">
-          {confirmationDialog.description}
-        </DialogDescription>
-      </DialogHeader>
-
-      <DialogFooter className="mt-3 gap-2 sm:gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
-          className="w-full sm:w-auto rounded-lg border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => {
-            confirmationDialog.action();
-            setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
-          }}
-          className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-        >
-          Confirm
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+          <DialogFooter className="mt-3 gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+              className="w-full sm:w-auto rounded-lg border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                confirmationDialog.action();
+                setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+              }}
+              className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div >
   )
 });
