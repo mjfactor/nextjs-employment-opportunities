@@ -1,6 +1,5 @@
-import { smoothStream, streamText } from 'ai';
+import { smoothStream, streamText, type Message } from 'ai';
 import { google } from '@ai-sdk/google';
-import { NextRequest } from 'next/server';
 
 // Career compass prompt template (the same one from the server action)
 const CAREER_COMPASS_PROMPT = `
@@ -112,96 +111,31 @@ For each role (7-8 total, tailored to experience level):
    - Ensure language is clear and accessible. Avoid overly technical terms unless necessary, and define them if used.
 `;
 
-export async function POST(request: NextRequest) {
+export const maxDuration = 30;
+
+export async function POST(request: Request) {
     try {
-        const formData = await request.formData();
+        const { messages }: { messages: Message[] } = await request.json();
 
-        // Check for inputs - either file or text
-        const file = formData.get('file') as File | null;
-        const text = formData.get('text') as string | null;
-
-        // Guard clause - require either text or file
-        if (!file && !text) {
-            return new Response(
-                JSON.stringify({ error: 'No content provided for analysis' }),
-                {
-                    status: 400,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-        }
+        // Check if user has sent a PDF
+        const messagesHavePDF = messages.some(message =>
+            message.experimental_attachments?.some(
+                a => a.contentType === 'application/pdf',
+            ),
+        );
 
         // Initialize the model
         const model = google('gemini-2.0-flash');
 
-        // Handle PDF file uploads
-        if (file && file.name.toLowerCase().endsWith('.pdf')) {
-            const fileBuffer = await file.arrayBuffer();
+        // Generate streaming response with appropriate handling based on content type
+        const response = streamText({
+            model: messagesHavePDF ? model : model,
+            messages,
+            system: CAREER_COMPASS_PROMPT
+        });
 
-            // Create message with file content for PDFs
-            const messages = [{
-                role: 'user' as const,
-                content: [
-                    {
-                        type: 'text' as const,
-                        text: `${CAREER_COMPASS_PROMPT}\n\nAnalyze the resume in the attached PDF file using this format:`
-                    },
-                    {
-                        type: 'file' as const,
-                        data: fileBuffer,
-                        mimeType: 'application/pdf'
-                    }
-                ]
-            }];
-
-            // Generate streaming response with file input
-            const response = streamText({
-                model,
-                messages,
-                experimental_transform: smoothStream()
-            });
-
-            // Return the streaming response
-            return response.toTextStreamResponse({
-                headers: {
-                    'Content-Type': 'text/event-stream',
-                    'Cache-Control': 'no-cache, no-transform',
-                    'Connection': 'keep-alive',
-                },
-            });
-        }
-        // Handle text input (manually entered details or extracted from DOCX)
-        else if (text) {
-            // Generate streaming response with text input
-            const response = streamText({
-                model,
-                prompt: `${CAREER_COMPASS_PROMPT}\n\nRESUME CONTENT TO ANALYZE:\n${text}`,
-                experimental_transform: smoothStream()
-            });
-
-            // Return the streaming response
-            return response.toTextStreamResponse({
-                headers: {
-                    'Content-Type': 'text/event-stream',
-                    'Cache-Control': 'no-cache, no-transform',
-                    'Connection': 'keep-alive',
-                },
-            });
-        }
-        // Unsupported format
-        else {
-            return new Response(
-                JSON.stringify({ error: 'Unsupported file format. Only PDF files or text content are supported.' }),
-                {
-                    status: 400,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-        }
+        // Return the streaming response
+        return response.toDataStreamResponse();
     } catch (error) {
         console.error('Error generating career compass answer:', error);
         return new Response(
