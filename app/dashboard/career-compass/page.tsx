@@ -10,7 +10,7 @@ import {
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/auth"
 import { ModeToggle } from "@/components/dark-light-toggle/theme-toggle"
-import CareerAnalysis from "@/components/career-compass/career-compass-ui"
+import CareerCompass from "@/components/career-compass/career-compass-ui"
 
 
 export default async function Page() {
@@ -42,8 +42,8 @@ export default async function Page() {
           </div>
         </header>
 
-        <main className="p-7">
-          <CareerAnalysis />
+        <main className="pt-7">
+          <CareerCompass/>
         </main>
       </SidebarInset>
     </SidebarProvider>
