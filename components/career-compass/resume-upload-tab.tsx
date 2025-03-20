@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState, useRef, useEffect } from "react"
 import { Upload, FileUp, CheckCircle, AlertCircle, File, X, Loader2 } from "lucide-react"
@@ -12,6 +12,10 @@ import { cn } from "@/lib/utils"
 import mammoth from "mammoth"
 import { validateResumeFile, validateResumeText } from "@/lib/actions/resume-validator"
 import { useChat } from '@ai-sdk/react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+// Add this memo component to optimize markdown rendering
+
 
 export function ResumeUpload() {
   const [file, setFile] = useState<File | null>(null)
@@ -26,9 +30,10 @@ export function ResumeUpload() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropAreaRef = useRef<HTMLDivElement>(null)
 
-  // Initialize the useChat hook with the correct API endpoint
-  const { messages, handleSubmit, status, stop, error, reload, setInput } = useChat({
-    api: "/api/career-compass" // Use the career-compass API endpoint
+  // Initialize the useChat hook with the correct API endpoint and throttling
+  const { messages, handleSubmit, status, stop, error, reload, setInput, setMessages } = useChat({
+    api: "/api/career-compass", // Use the career-compass API endpoint
+    experimental_throttle: 300 // Throttle UI updates to every 300ms during streaming
   });
 
   // Reset animation states when file changes
@@ -188,7 +193,7 @@ export function ResumeUpload() {
     if (!file) return;
 
     setShowAnalysis(true);
-
+    setMessages([]); // Clear previous messages
     if (extractedText) {
       // For DOCX files, use the extracted text as input
       setInput(extractedText);
@@ -374,18 +379,44 @@ export function ResumeUpload() {
         {/* Analysis Results */}
         {showAnalysis && messages.length > 0 && (
           <div className="mt-4 space-y-4 animate-in fade-in-50 duration-300">
-            <h3 className="text-lg font-medium">Resume Analysis</h3>
-            <div className="space-y-4 max-h-[400px] overflow-y-auto">
+            <div className="space-y-4">
               {messages.map(message => (
-                <div key={message.id} className={cn("p-4 rounded-lg", {
-                  "bg-primary/10": message.role === 'user',
-                  "bg-secondary": message.role === 'assistant'
-                })}>
-                  <p className="font-medium mb-1">{message.role === 'user' ? 'Your Resume:' : 'Analysis:'}</p>
-                  <div className="prose dark:prose-invert max-w-none text-sm">
-                    {message.content}
+                message.role === 'assistant' && (
+                  <div key={message.id} className="p-4 rounded-lg">
+
+                    <div className="prose dark:prose-invert max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-li:my-0 prose-p:my-2 prose-table:border-collapse">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-6 mb-3 pb-1 border-b" {...props} />,
+                          h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-4 mb-2" {...props} />,
+                          h3: ({ node, ...props }) => <h3 className="text-base font-semibold mt-3 mb-2" {...props} />,
+                          h4: ({ node, ...props }) => <h4 className="text-sm font-semibold mt-3 mb-1" {...props} />,
+                          a: ({ node, href, ...props }) => (
+                            <a href={href} className="text-blue-600 dark:text-blue-400 underline" target="_blank" rel="noopener noreferrer" {...props} />
+                          ),
+                          p: ({ node, ...props }) => <p className="my-2 text-sm" {...props} />,
+                          ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
+                          ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
+                          li: ({ node, ...props }) => <li className="my-1 text-sm" {...props} />,
+                          blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/30 pl-3 py-1 my-3 italic text-sm" {...props} />,
+                          table: ({ node, ...props }) => (
+                            <div className="overflow-x-auto my-4 border rounded">
+                              <table className="w-full text-sm" {...props} />
+                            </div>
+                          ),
+                          thead: ({ node, ...props }) => <thead className="border-b" {...props} />,
+                          tr: ({ node, ...props }) => <tr className="border-b" {...props} />,
+                          th: ({ node, ...props }) => <th className="border-r last:border-r-0 px-3 py-2 text-left font-medium" {...props} />,
+                          td: ({ node, ...props }) => <td className="border-r last:border-r-0 px-3 py-2" {...props} />,
+                          hr: ({ node, ...props }) => <hr className="my-4" {...props} />,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           </div>
@@ -458,8 +489,8 @@ export function ResumeUpload() {
             </>
           )}
         </Button>
-      </CardFooter>
-    </Card>
+      </CardFooter >
+    </Card >
   )
 }
 

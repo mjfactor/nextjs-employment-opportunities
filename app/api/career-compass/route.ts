@@ -114,40 +114,41 @@ For each role (7-8 total, tailored to experience level):
 export const maxDuration = 30;
 
 export async function POST(request: Request) {
-    try {
-        const { messages }: { messages: Message[] } = await request.json();
+  try {
+    const { messages }: { messages: Message[] } = await request.json();
 
-        // Check if user has sent a PDF
-        const messagesHavePDF = messages.some(message =>
-            message.experimental_attachments?.some(
-                a => a.contentType === 'application/pdf',
-            ),
-        );
+    // Check if user has sent a PDF
+    const messagesHavePDF = messages.some(message =>
+      message.experimental_attachments?.some(
+        a => a.contentType === 'application/pdf',
+      ),
+    );
 
-        // Initialize the model
-        const model = google('gemini-2.0-flash');
+    // Initialize the model
+    const model = google('gemini-2.0-flash');
 
-        // Generate streaming response with appropriate handling based on content type
-        const response = streamText({
-            model: messagesHavePDF ? model : model,
-            messages,
-            system: CAREER_COMPASS_PROMPT
-        });
+    // Generate streaming response with appropriate handling based on content type
+    const response = streamText({
+      model: messagesHavePDF ? model : model,
+      messages,
+      system: CAREER_COMPASS_PROMPT,
+      experimental_transform: smoothStream()
+    });
 
-        // Return the streaming response
-        return response.toDataStreamResponse();
-    } catch (error) {
-        console.error('Error generating career compass answer:', error);
-        return new Response(
-            JSON.stringify({
-                error: error instanceof Error ? error.message : 'Failed to generate career compass answer'
-            }),
-            {
-                status: 500,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-    }
+    // Return the streaming response
+    return response.toDataStreamResponse();
+  } catch (error) {
+    console.error('Error generating career compass answer:', error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Failed to generate career compass answer'
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  }
 }

@@ -5,7 +5,7 @@ import { ManualDataEntry } from "@/components/career-compass/manual-details-tab"
 
 export default function CareerCompass() {
     return (
-        <div className="w-full max-w-8xl mx-auto">
+        <div className="w-full max-w-6xl mx-auto">
             <Tabs defaultValue="resume-upload" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                     <TabsTrigger value="resume-upload">Resume Upload</TabsTrigger>
