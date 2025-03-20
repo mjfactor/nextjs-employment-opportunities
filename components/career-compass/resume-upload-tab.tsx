@@ -28,7 +28,6 @@ import {
 
 const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
   const [file, setFile] = useState<File | null>(null)
-  const [filePreview, setFilePreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
   const [isValidResume, setIsValidResume] = useState<boolean | null>(null)
@@ -234,7 +233,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     setIsValidResume(null);
 
     // Remove text file preview logic since we no longer accept txt files
-    setFilePreview(null);
+
   }
 
   const removeFile = () => {
@@ -247,7 +246,6 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
         action: () => {
           stopAnalysis();
           setFile(null);
-          setFilePreview(null);
           setIsValidResume(null);
           setUploadStage("idle");
           setUploadProgress(0);
@@ -258,7 +256,6 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     }
 
     setFile(null);
-    setFilePreview(null);
     setIsValidResume(null);
     setUploadStage("idle");
     setUploadProgress(0);
