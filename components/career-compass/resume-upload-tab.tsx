@@ -479,22 +479,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {filePreview && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 rounded-full p-0 hover:bg-primary/10 hover:text-primary transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        // Open preview in modal or expand in place
-                        alert("Preview functionality would open here")
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">Preview</span>
-                    </Button>
-                  )}
-
+                
                   <Button
                     variant="ghost"
                     size="icon"
