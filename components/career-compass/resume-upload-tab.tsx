@@ -476,7 +476,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
                 </div>
 
                 <div className="flex items-center gap-1">
-                
+
                   <Button
                     variant="ghost"
                     size="icon"
@@ -662,19 +662,9 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="mt-6 border rounded-lg p-4 bg-card shadow-md"
+            className="mt-6 rounded-lg p-4 bg-card shadow-md"
             ref={analysisContainerRef}
           >
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-              className="flex justify-between items-center mb-3 pb-2 border-b"
-            >
-              <h3 className="text-xl font-bold text-primary">
-                {isStreaming ? "Streaming Analysis..." : "Your Career Analysis"}
-              </h3>
-            </motion.div>
 
             {/* Performance optimization: Simplified styling */}
             <motion.div
