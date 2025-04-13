@@ -90,6 +90,8 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
   const [analysisPhase, setAnalysisPhase] = useState<"structured" | "markdown" | null>(null)
   // Add state to store structured data
   const [structuredData, setStructuredData] = useState<any>(null)
+  // Add state to track if the current analysis is saved
+  const [isSaved, setIsSaved] = useState<boolean>(false)
 
   // Ref to track if component is mounted
   const isMounted = useRef(true)
@@ -101,7 +103,27 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
   useImperativeHandle(ref, () => ({
     isAnalyzing,
     isStreaming,
-    stopAnalysis: () => stopAnalysis()
+    stopAnalysis: () => stopAnalysis(),
+    loadSavedAnalysis: (data: any) => {
+      // Only load if we have data
+      if (data && data.structuredData && data.markdownResult) {
+        console.log('Loading saved manual analysis data');
+
+        // Set the structured data and analysis result
+        setStructuredData(data.structuredData);
+        setAnalysisResult(data.markdownResult);
+
+        // Set view states to show the analysis
+        setAnalysisPhase(null);
+        setIsAnalyzing(false);
+        setIsStreaming(false);
+        setIsSaved(true);
+        
+        // Set form validation state to valid to ensure UI shows analysis properly
+        setFormValid(true);
+        setIsSubmitting(false);
+      }
+    }
   }));
 
   useEffect(() => {
@@ -133,6 +155,37 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
   useEffect(() => {
     validateForm()
   }, [courseInfo, skills, aboutYourself, jobExperiences, hasJobExperience])
+
+  // Save analysis to the server for persistence
+  const saveAnalysisToServer = async (structuredData: any, markdownResult: string) => {
+    if (!structuredData || !markdownResult || isSaved) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/career-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'manual',
+          structuredData,
+          markdownResult,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error saving analysis: ${response.status}`);
+      }
+
+      console.log('Analysis saved successfully');
+      setIsSaved(true);
+    } catch (error) {
+      console.error('Error saving analysis:', error);
+      // Don't show error to user as this is a background operation
+    }
+  };
 
   const validateForm = () => {
     const newErrors: FormErrors = {
@@ -429,6 +482,9 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
       toast.success("Success!", {
         description: "Your details have been analyzed successfully.",
       })
+
+      // Save analysis to server
+      saveAnalysisToServer(structuredData, analysisResult);
 
     } catch (error) {
       // Check if this was an abort error
@@ -1000,22 +1056,6 @@ const ManualDetailsTab = forwardRef(function ManualDetailsTab(props, ref) {
               )}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Scroll to bottom button - only shows during analysis */}
-      <AnimatePresence>
-        {isAnalyzing && (
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all z-50 flex items-center justify-center"
-            aria-label="Scroll to bottom of analysis"
-          >
-            <ArrowDown className="h-4 w-4" />
-          </motion.button>
         )}
       </AnimatePresence>
     </form>

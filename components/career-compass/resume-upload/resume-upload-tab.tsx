@@ -48,6 +48,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
   const [structuredData, setStructuredData] = useState<any>(null)
   const [resultsView, setResultsView] = useState<"text" | "visualization">("text")
   const [showPlaceholder, setShowPlaceholder] = useState<boolean>(false)
+  const [isSaved, setIsSaved] = useState<boolean>(false)
 
   // Ref to track if component is mounted
   const isMounted = useRef(true);
@@ -58,7 +59,24 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
   useImperativeHandle(ref, () => ({
     isAnalyzing,
     isStreaming,
-    stopAnalysis: () => stopAnalysis()
+    stopAnalysis: () => stopAnalysis(),
+    loadSavedAnalysis: (data: any) => {
+      // Only load if we have data
+      if (data && data.structuredData && data.markdownResult) {
+        console.log('Loading saved resume analysis data');
+
+        // Set the structured data and analysis result
+        setStructuredData(data.structuredData);
+        setAnalysisResult(data.markdownResult);
+
+        // Set view states
+        setShowPlaceholder(false);
+        setIsValidResume(true);
+        setIsAnalyzing(false);
+        setIsStreaming(false);
+        setIsSaved(true);
+      }
+    }
   }));
 
   // State for managing confirmation dialogs
@@ -338,6 +356,37 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
     return true;
   }
 
+  // Save analysis to the server for persistence
+  const saveAnalysisToServer = async (structuredData: any, markdownResult: string) => {
+    if (!structuredData || !markdownResult || isSaved) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/career-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'resume',
+          structuredData,
+          markdownResult,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error saving analysis: ${response.status}`);
+      }
+
+      console.log('Analysis saved successfully');
+      setIsSaved(true);
+    } catch (error) {
+      console.error('Error saving analysis:', error);
+      // Don't show error to user as this is a background operation
+    }
+  };
+
   // Handle resume submission for analysis with streaming
   const submitResume = async () => {
     if (!file && !resumeContent || !isValidResume) {
@@ -352,6 +401,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
       setStructuredData(null);
       setShowPlaceholder(true);
       setResultsView("text");
+      setIsSaved(false); // Reset saved state for new analysis
 
       // Create an AbortController for this request
       abortControllerRef.current = new AbortController();
@@ -416,6 +466,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
       const processStream = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
         const decoder = new TextDecoder();
         let done = false;
+        let fullText = '';
 
         while (!done) {
           const { value, done: doneReading } = await reader.read();
@@ -424,6 +475,7 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
           if (value) {
             const chunk = decoder.decode(value, { stream: !done });
             if (isMounted.current) {
+              fullText += chunk;
               setAnalysisResult(prev => {
                 // Hide the placeholder when we get the first chunk of data
                 setShowPlaceholder(false);
@@ -434,7 +486,13 @@ const ResumeUploadTab = forwardRef(function ResumeUploadTab(props, ref) {
 
           if (done) break;
         }
+
+        // When streaming is complete, save the analysis to the server
+        if (fullText && structuredData) {
+          saveAnalysisToServer(structuredData, fullText);
+        }
       };
+
       toast.success("Success!", {
         description: "Your details have been analyzed successfully.",
       })

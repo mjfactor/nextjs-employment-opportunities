@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import ResumeUploadTab from "@/components/career-compass/resume-upload/resume-upload-tab"
@@ -25,6 +25,18 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle, Upload, FileText, Info, PenLine } from "lucide-react"
 // Import Framer Motion for animations
 import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner" // Assuming you use Sonner for toasts
+
+// Interface for saved analysis data
+interface SavedAnalysis {
+    id: string;
+    userId: string;
+    source: string;
+    structuredData: any;
+    markdownResult: string;
+    createdAt: string;
+    updatedAt: string;
+}
 
 export default function CareerAnalysis({
     id,
@@ -34,10 +46,12 @@ export default function CareerAnalysis({
     userId: any
 }) {
     const [activeTab, setActiveTab] = useState("resume-upload")
+    const [isLoading, setIsLoading] = useState(false)
+    const [savedAnalysis, setSavedAnalysis] = useState<SavedAnalysis | null>(null)
 
     // Add refs to access tab components
-    const resumeUploadRef = useRef<{ isAnalyzing: boolean, isStreaming: boolean, stopAnalysis: () => boolean } | null>(null)
-    const manualDetailsRef = useRef<{ isAnalyzing: boolean, isStreaming: boolean, stopAnalysis?: () => void } | null>(null)
+    const resumeUploadRef = useRef<{ isAnalyzing: boolean, isStreaming: boolean, stopAnalysis: () => boolean, loadSavedAnalysis?: (data: any) => void } | null>(null)
+    const manualDetailsRef = useRef<{ isAnalyzing: boolean, isStreaming: boolean, stopAnalysis?: () => void, loadSavedAnalysis?: (data: any) => void } | null>(null)
 
     // Add state for confirmation dialog
     const [confirmDialog, setConfirmDialog] = useState({
@@ -79,6 +93,58 @@ export default function CareerAnalysis({
         // Close dialog
         setConfirmDialog({ isOpen: false, targetTab: "" })
     }
+
+    // Fetch saved analysis on component mount
+    useEffect(() => {
+        const fetchSavedAnalysis = async () => {
+            if (!userId) return
+
+            try {
+                setIsLoading(true)
+                const response = await fetch('/api/career-analysis')
+
+                if (response.status === 404) {
+                    // No saved analysis found, which is fine
+                    return
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Error fetching saved analysis: ${response.status}`)
+                }
+
+                const data = await response.json()
+                setSavedAnalysis(data)
+
+                // Set the active tab based on the source
+                if (data.source === 'manual') {
+                    setActiveTab('manual-details')
+                } else {
+                    setActiveTab('resume-upload')
+                }
+
+                // Show a toast notification
+                toast.info('Previous analysis loaded')
+            } catch (error) {
+                console.error('Error fetching saved analysis:', error)
+                toast.error('Could not load your previous analysis')
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchSavedAnalysis()
+    }, [userId])
+
+    // Pass saved analysis to the appropriate component when available
+    useEffect(() => {
+        if (savedAnalysis) {
+            if (savedAnalysis.source === 'resume' && resumeUploadRef.current?.loadSavedAnalysis) {
+                resumeUploadRef.current.loadSavedAnalysis(savedAnalysis)
+            } else if (savedAnalysis.source === 'manual' && manualDetailsRef.current?.loadSavedAnalysis) {
+                manualDetailsRef.current.loadSavedAnalysis(savedAnalysis)
+            }
+        }
+    }, [savedAnalysis, resumeUploadRef.current, manualDetailsRef.current])
 
     return (
         <div className="space-y-6 w-full max-w-[75rem] mx-auto pt-6">
