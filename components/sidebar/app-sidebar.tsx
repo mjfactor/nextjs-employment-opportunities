@@ -15,7 +15,6 @@ import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { NavMain } from "./nav-main"
 import { NavUser } from "./nav-user"
-import { ChatHistory } from "./chat-history"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail, SidebarSeparator, useSidebar } from "@/components/ui/sidebar"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -97,7 +96,6 @@ export function AppSidebar({
   // Get current pathname to check which page we're on
   const pathname = usePathname()
   const isCareerCompassPage = pathname?.includes('/dashboard/career-compass')
-  const isChatPage = pathname?.includes('/dashboard/chat')
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -118,12 +116,6 @@ export function AppSidebar({
         url: "/dashboard/career-compass",
         icon: Compass,
         isActive: isCareerCompassPage,
-      },
-      {
-        title: "Chatbot",
-        url: "/dashboard/chat",
-        icon: BotMessageSquareIcon,
-        isActive: isChatPage,
       },
     ],
     miscellaneous: [
@@ -153,29 +145,6 @@ export function AppSidebar({
       <SidebarContent className="overflow-hidden">
         <NavMain items={data.navMain} groupLabel="AI Agents" />
         <NavMain items={data.miscellaneous} groupLabel="Miscellaneous" />
-
-        {/* Show Chat History only on Chat page */}
-        {isChatPage && (
-          <>
-            <div className="w-full overflow-hidden">
-              <SidebarSeparator className="my-2 w-full max-w-full" />
-            </div>
-
-            {/* Use the ChatHistory component */}
-            <Suspense fallback={
-              <div className="px-2">
-                <div className="text-xs font-medium text-muted-foreground px-3 py-1.5">Recent Chat</div>
-                <div className="px-3 py-5">
-                  <Skeleton className="h-5 w-full mb-3" />
-                  <Skeleton className="h-5 w-3/4 mb-3" />
-                  <Skeleton className="h-5 w-5/6" />
-                </div>
-              </div>
-            }>
-              <ChatHistory userId={userData?.id || 'anonymous'} />
-            </Suspense>
-          </>
-        )}
 
         {/* Career Compass section, but without the chat history */}
         {isCareerCompassPage && (
