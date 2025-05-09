@@ -4,20 +4,14 @@ import type * as React from "react"
 import {
   Compass,
   LayoutDashboard,
-  FileText,
-  Trash2,
-  BotMessageSquareIcon,
   Clock,
-  Briefcase
 } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { Suspense, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { NavMain } from "./nav-main"
 import { NavUser } from "./nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail, SidebarSeparator, useSidebar } from "@/components/ui/sidebar"
-
-import { Skeleton } from "@/components/ui/skeleton"
 
 // Real-time clock component - Client-side only rendering
 function RealtimeClock() {
